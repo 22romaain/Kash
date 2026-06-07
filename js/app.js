@@ -373,11 +373,18 @@
       const cx = 280, cy = 220, r = 130;
 
       if (budget === 0 && totalSpentAmt === 0) {
+        // Cercle plein + annotation "Solde restant 100%" comme une tranche normale
+        const lx1 = cx + (r + 4), ly1 = cy;
+        const lx2 = cx + (r + 22), lY = cy;
+        const lx3 = lx2 + 24, textX = lx3 + 5;
         svg.innerHTML = `
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e8eaef" stroke-width="1" stroke-dasharray="4 3"/>
-          <text x="${cx}" y="${cy + 4}" text-anchor="middle"
-            font-family="Josefin Sans, sans-serif" font-size="11"
-            letter-spacing="3" fill="#9ca3af" font-weight="200">AUCUNE DÉPENSE</text>`;
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="white" stroke="#d1d5db" stroke-width="1"/>
+          <polyline points="${lx1},${ly1} ${lx2},${lY} ${lx3},${lY}"
+            fill="none" stroke="#d1d5db" stroke-width="1.5" pointer-events="none"/>
+          <text x="${textX}" y="${lY - 4}" text-anchor="start" pointer-events="none"
+            font-family="Josefin Sans, sans-serif" font-size="18" font-weight="700" fill="#9ca3af">100%</text>
+          <text x="${textX}" y="${lY + 13}" text-anchor="start" pointer-events="none"
+            font-family="Josefin Sans, sans-serif" font-size="11" font-weight="600" fill="#9ca3af" letter-spacing="0.5">Solde restant</text>`;
         return;
       }
 
@@ -888,6 +895,35 @@
           font-family="Josefin Sans, sans-serif" font-size="9" font-weight="${isCurrent ? '700' : '600'}"
           letter-spacing="0.5" fill="${lc}">${d.label}</text>`;
       });
+
+      // Budget curve (connects top-center of each budget bar)
+      if (selectedMonth === null) {
+        let curvePath = '';
+        let inSeg = false;
+        data.forEach((d, i) => {
+          if (d.budget <= 0) { inSeg = false; return; }
+          const gx = i * groupW;
+          const cx = gx + groupW / 2;
+          const bh = Math.max((d.budget / maxVal) * chartH, 2);
+          const px = (cx - barW / 2 - 2).toFixed(1);
+          const py = (mT + chartH - bh).toFixed(1);
+          curvePath += inSeg ? `L ${px} ${py} ` : `M ${px} ${py} `;
+          inSeg = true;
+        });
+        if (curvePath) {
+          content += `<path d="${curvePath}" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none" opacity="0.5"/>`;
+          // Dots at each budget point
+          data.forEach((d, i) => {
+            if (d.budget <= 0) return;
+            const gx = i * groupW;
+            const cx = gx + groupW / 2;
+            const bh = Math.max((d.budget / maxVal) * chartH, 2);
+            const px = (cx - barW / 2 - 2).toFixed(1);
+            const py = (mT + chartH - bh).toFixed(1);
+            content += `<circle cx="${px}" cy="${py}" r="2.5" fill="#64748b" opacity="0.5" pointer-events="none"/>`;
+          });
+        }
+      }
 
       // Baseline
       content += `<line x1="0" y1="${mT + chartH}" x2="${W}" y2="${mT + chartH}" stroke="#e8eaef" stroke-width="1" pointer-events="none"/>`;
