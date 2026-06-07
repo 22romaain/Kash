@@ -571,13 +571,13 @@
       transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .expense-cat-row:hover .cat-indicator {
-      color: var(--text);
-    }
+    .expense-cat-row:hover .cat-indicator,
+    .budget-cat-entry:hover .cat-indicator { color: var(--text); }
 
-    .expense-cat-row:hover .cat-indicator::before {
-      transform: rotate(90deg);
-    }
+    .expense-cat-row:hover .cat-indicator::before { transform: rotate(90deg); }
+
+    .budget-cat-entry:hover .cat-indicator::before,
+    .budget-cat-entry.editing .cat-indicator::before { transform: rotate(90deg); }
 
     .expense-cat-detail {
       overflow: hidden;
@@ -873,6 +873,7 @@
     }
 
     .btn-ghost:hover { color: var(--danger); }
+    .btn-edit-expense:hover { color: var(--accent) !important; }
 
     /* Budget field */
     .budget-field {
@@ -1832,10 +1833,11 @@
       document.getElementById('detailBackdrop').classList.add('visible');
 
       document.getElementById('detailSaveBudget').onclick = () => {
-        const val = parseFloat(document.getElementById('detailBudgetInput').value);
+        const raw = document.getElementById('detailBudgetInput').value.trim();
+        const val = parseFloat(raw);
         const key = monthKey(currentDate);
         if (!state.budgets[key]) state.budgets[key] = {};
-        if (val > 0) state.budgets[key][catId] = val;
+        if (raw !== '' && !isNaN(val)) state.budgets[key][catId] = val;
         else delete state.budgets[key][catId];
         saveState();
         render();
@@ -1855,6 +1857,53 @@
       });
     }
 
+    function showExpenseEdit(expenseId) {
+      const expense = state.expenses.find(e => e.id === expenseId);
+      if (!expense) return;
+      const cat = getCat(expense.category);
+
+      activeDetail = { type: 'expense', expenseId };
+      document.getElementById('detailPanel').innerHTML = `
+        <div class="detail-header">
+          <span class="cat-dot" style="background:${cat.color}"></span>
+          <h3>Modifier la dépense</h3>
+        </div>
+        <div class="detail-edit-label" style="margin-bottom:6px;">Montant (€)</div>
+        <div class="detail-input-row" style="margin-bottom:20px;">
+          <input class="detail-input" type="number" id="editAmount" step="0.01" min="0.01"
+            value="${expense.amount}" placeholder="0">
+          <span class="detail-input-currency">€</span>
+        </div>
+        <div class="detail-edit-label" style="margin-bottom:6px;">Date</div>
+        <input type="date" id="editDate" value="${expense.date}" style="margin-bottom:20px;">
+        <div class="detail-edit-label" style="margin-bottom:6px;">Catégorie</div>
+        <select id="editCategory" style="margin-bottom:20px;">
+          ${CATEGORIES.map(c => `<option value="${c.id}"${c.id === migrateCategoryId(expense.category) ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+        </select>
+        <div class="detail-edit-label" style="margin-bottom:6px;">Description</div>
+        <textarea id="editDescription" style="margin-bottom:20px;">${escapeHtml(expense.description || '')}</textarea>
+        <button class="detail-save-btn" id="editSaveBtn">Enregistrer</button>
+      `;
+      document.getElementById('detailPanel').classList.add('visible');
+      document.getElementById('detailBackdrop').classList.add('visible');
+
+      document.getElementById('editSaveBtn').onclick = () => {
+        const amount = parseFloat(document.getElementById('editAmount').value);
+        const date = document.getElementById('editDate').value;
+        const category = document.getElementById('editCategory').value;
+        const description = document.getElementById('editDescription').value.trim();
+        if (!amount || !date || !category) return;
+        const idx = state.expenses.findIndex(e => e.id === expenseId);
+        if (idx !== -1) {
+          state.expenses[idx] = { ...state.expenses[idx], amount, date, category, description };
+          saveState();
+          render();
+          hideDetail();
+          showToast('Dépense modifiée');
+        }
+      };
+    }
+
     function bindExpenseDelete() {
       document.querySelectorAll('[data-del-expense]').forEach(btn => {
         btn.onclick = e => {
@@ -1863,6 +1912,12 @@
           saveState();
           render();
           showToast('Dépense supprimée');
+        };
+      });
+      document.querySelectorAll('[data-edit-expense]').forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          showExpenseEdit(btn.dataset.editExpense);
         };
       });
     }
@@ -1884,8 +1939,9 @@
                  <div class="expense-cat-item-meta">${formatDate(e.date)}</div>`
               : `<div class="expense-cat-item-desc">${formatDate(e.date)}</div>`}
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
             <span class="expense-cat-item-amt">${formatCurrency(e.amount)}</span>
+            <button type="button" class="btn btn-ghost btn-edit-expense" data-edit-expense="${e.id}">✎</button>
             <button type="button" class="btn btn-ghost" data-del-expense="${e.id}">✕</button>
           </div>
         </div>
@@ -1894,12 +1950,12 @@
 
     // --- Pie chart ---
 
-    function renderPieChart() {
+    function renderPieChart(svgId = 'pieChart', tooltipId = 'pieTooltip') {
       const spent = spentByCategory(currentDate);
       const totalSpentAmt = Object.values(spent).reduce((s, v) => s + v, 0);
       const budget = totalBudget();
-      const svg = document.getElementById('pieChart');
-      const tooltip = document.getElementById('pieTooltip');
+      const svg = document.getElementById(svgId);
+      const tooltip = document.getElementById(tooltipId);
       if (!svg) return;
 
       const cx = 280, cy = 220, r = 130;
@@ -2101,19 +2157,18 @@
       const row = document.getElementById('budgetFieldRow');
 
       if (input && document.activeElement !== input) {
-        input.value = current > 0 ? current : '';
+        input.value = current != null && state.monthBudgets[monthKey(currentDate)] !== undefined ? current : '';
       }
 
       if (row && saveBtn && input) {
-        if (current > 0) {
+        if (state.monthBudgets[monthKey(currentDate)] !== undefined) {
           row.classList.add('has-budget');
           saveBtn.classList.remove('visible');
           input.readOnly = true;
         } else {
           row.classList.remove('has-budget');
           input.readOnly = false;
-          const val = parseFloat(input.value);
-          saveBtn.classList.toggle('visible', val > 0);
+          saveBtn.classList.toggle('visible', input.value.trim() !== '');
         }
       }
 
@@ -2171,11 +2226,7 @@
 
       const spent = spentByCategory(currentDate);
       const budget = getBudgetFor(currentDate);
-      const activeCats = CATEGORIES.filter(c => (spent[c.id] || 0) > 0 || (budget[c.id] || 0) > 0);
-
-      if (activeCats.length === 0) { catsEl.innerHTML = ''; return; }
-
-      const rows = activeCats.map(c => {
+      const rows = CATEGORIES.map(c => {
         const s = spent[c.id] || 0;
         const b = budget[c.id] || 0;
         const hasB = b > 0;
@@ -2191,7 +2242,7 @@
           <div class="budget-cat-entry" data-cat="${c.id}">
             <div class="budget-cat-entry-header">
               <div class="cat-row-left">
-                <span class="cat-dot" style="background:${c.color}"></span>
+                <span class="cat-indicator"></span>
                 <span class="cat-name">${escapeHtml(c.label)}</span>
               </div>
               <div class="budget-cat-entry-right">
@@ -2230,10 +2281,9 @@
         const saveBtn = entry.querySelector('.budget-cat-save-btn');
         const input = entry.querySelector('.budget-cat-amount-input');
 
-        // Show Enregistrer when value typed
+        // Show Enregistrer when value typed (0 inclus) ou vidé
         input.addEventListener('input', () => {
-          const val = parseFloat(input.value);
-          saveBtn.classList.toggle('visible', val > 0 || input.value === '');
+          saveBtn.classList.toggle('visible', input.value.trim() !== '');
         });
 
         // Modifier click → toggle expand
@@ -2258,10 +2308,11 @@
 
         // Enregistrer click → save & close
         saveBtn.addEventListener('click', () => {
-          const val = parseFloat(input.value);
+          const raw = input.value.trim();
+          const val = parseFloat(raw);
           const key = monthKey(currentDate);
           if (!state.budgets[key]) state.budgets[key] = {};
-          if (val > 0) state.budgets[key][catId] = val;
+          if (raw !== '' && !isNaN(val)) state.budgets[key][catId] = val;
           else delete state.budgets[key][catId];
           saveState();
           render();
@@ -2325,17 +2376,18 @@
         const isCurrent = d.month === now.getMonth() && year === now.getFullYear();
         const isSelected = selectedMonth === i;
         const faded = selectedMonth !== null && !isSelected;
-        const opacity = faded ? '0.12' : '1';
+        const groupOpacity = faded ? '0.12' : '1';
+        const budgetBarOpacity = faded ? '1' : isSelected ? '0.3' : '0.5';
 
         const bh = d.budget > 0 ? Math.max((d.budget / maxVal) * chartH, 2) : 0;
         const sh = d.spent > 0 ? Math.max((d.spent / maxVal) * chartH, 2) : 0;
         const by = (mT + chartH - bh).toFixed(1);
 
-        content += `<g class="annual-bar-group" data-month="${i}" style="cursor:pointer;opacity:${opacity};transition:opacity .25s;">`;
+        content += `<g class="annual-bar-group" data-month="${i}" style="cursor:pointer;opacity:${groupOpacity};transition:opacity .25s;">`;
 
         // Budget bar (left)
         if (d.budget > 0) {
-          content += `<rect x="${bx}" y="${by}" width="${barW}" height="${bh.toFixed(1)}" fill="#64748b" rx="2" opacity="${isCurrent ? '0.9' : '0.5'}"/>`;
+          content += `<rect x="${bx}" y="${by}" width="${barW}" height="${bh.toFixed(1)}" fill="#64748b" rx="2" opacity="${budgetBarOpacity}"/>`;
         }
 
         // Expense bar (right): plain or stacked
@@ -2391,7 +2443,7 @@
                 const edgeX      = isRight ? barRX : barLX;
                 const sign       = isRight ? 1 : -1;
                 const anchor     = isRight ? 'start' : 'end';
-                const reach      = isRight ? 68 : 42; // droite plus long pour passer la barre budget voisine
+                const reach      = isRight ? 68 : 82; // gauche plus long pour dégager la barre budget
                 const p1x        = (edgeX + sign *  3 * s).toFixed(2);
                 const p2x        = (edgeX + sign * 18 * s).toFixed(2);
                 const p3x        = (edgeX + sign * (reach - 4) * s).toFixed(2);
@@ -2593,8 +2645,7 @@
       const saveBtn = document.getElementById('saveBudgetBtn');
       const row = document.getElementById('budgetFieldRow');
       if (!input || !saveBtn || !row) return;
-      const val = parseFloat(input.value);
-      saveBtn.classList.toggle('visible', val > 0);
+      saveBtn.classList.toggle('visible', input.value.trim() !== '');
     }
 
     document.getElementById('budgetAmount').addEventListener('input', updateBudgetButtons);
@@ -2611,9 +2662,10 @@
     // --- Events ---
 
     document.getElementById('saveBudgetBtn').addEventListener('click', () => {
-      const val = parseFloat(document.getElementById('budgetAmount').value);
+      const raw = document.getElementById('budgetAmount').value.trim();
+      const val = parseFloat(raw);
       if (!state.monthBudgets) state.monthBudgets = {};
-      if (val > 0) state.monthBudgets[monthKey(currentDate)] = val;
+      if (raw !== '' && !isNaN(val)) state.monthBudgets[monthKey(currentDate)] = val;
       else delete state.monthBudgets[monthKey(currentDate)];
       saveState();
       render();
