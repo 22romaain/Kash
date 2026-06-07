@@ -56,9 +56,10 @@
       justify-content: space-between;
       padding: 16px 28px;
       background: rgba(248,249,251,.85);
+      -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid transparent;
-      transition: border-color .2s;
+      transition: border-color .4s ease;
     }
 
     .chrome.scrolled { border-bottom-color: var(--border); }
@@ -100,7 +101,7 @@
       border: none; background: transparent;
       border-radius: 7px; cursor: pointer;
       color: var(--text-muted); font-size: 1rem;
-      transition: background .15s, color .15s;
+      transition: background .25s ease, color .25s ease;
     }
 
     .month-nav button:hover { background: var(--accent-light); color: var(--accent); }
@@ -133,7 +134,7 @@
       color: var(--text-muted);
       cursor: pointer;
       position: relative;
-      transition: color .2s;
+      transition: color .3s ease;
     }
 
     .tab-btn::after {
@@ -143,7 +144,7 @@
       height: 2px;
       background: var(--text);
       transform: scaleX(0);
-      transition: transform .2s;
+      transition: transform .4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .tab-btn.active { color: var(--text); }
@@ -170,7 +171,7 @@
 
     .page + .page {
       border-top: 1px solid var(--border);
-      padding-top: 72px;
+      padding-top: 24px;
     }
 
     /* Month selector inline */
@@ -237,6 +238,61 @@
 
     .annual-table td.pos { color: var(--success); font-weight: 700; }
     .annual-table td.neg { color: var(--danger);  font-weight: 700; }
+
+    @keyframes annot-in {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .annual-annot {
+      opacity: 0;
+      animation: annot-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Annual chart */
+    #annualChartContainer {
+      margin-bottom: 48px;
+      min-height: 320px;
+    }
+
+    #annualChartContainer svg {
+      overflow: visible;
+    }
+
+    .annual-chart-legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+
+    .annual-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-futuristic);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .annual-legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .annual-chart-hint {
+      font-family: var(--font-futuristic);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-top: 10px;
+      opacity: 0.7;
+    }
 
     .expenses-block {
       width: 100%;
@@ -409,7 +465,7 @@
       padding: 20px 0;
       border-bottom: 1px solid var(--border);
       cursor: default;
-      transition: padding-left .2s;
+      transition: padding-left .35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .cat-row:hover { padding-left: 8px; }
@@ -460,8 +516,7 @@
       border-bottom: 1px solid var(--border);
       border-radius: 0;
       background: transparent;
-      overflow: hidden;
-      transition: padding-left .2s;
+      transition: padding-left .35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .expense-cat-row:first-child {
@@ -504,7 +559,7 @@
       flex-shrink: 0;
       width: 18px;
       text-align: center;
-      transition: color .2s;
+      transition: color .3s ease;
       color: var(--text-muted);
     }
 
@@ -513,7 +568,7 @@
       display: inline-block;
       font-size: 13px;
       line-height: 1;
-      transition: transform .3s ease;
+      transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .expense-cat-row:hover .cat-indicator {
@@ -525,18 +580,22 @@
     }
 
     .expense-cat-detail {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows .35s ease;
-    }
-
-    .expense-cat-row:hover .expense-cat-detail {
-      grid-template-rows: 1fr;
+      overflow: hidden;
+      height: 0;
+      transition: height 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .expense-cat-detail-wrap {
       overflow: hidden;
-      min-height: 0;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity .6s ease, transform .9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .expense-cat-row:hover .expense-cat-detail-wrap {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: 0.2s;
     }
 
     .expense-cat-scroll {
@@ -598,7 +657,7 @@
       box-shadow: var(--shadow);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .2s, transform .2s;
+      transition: opacity .35s cubic-bezier(0.16, 1, 0.3, 1), transform .4s cubic-bezier(0.16, 1, 0.3, 1);
       z-index: 40;
     }
 
@@ -614,7 +673,7 @@
       background: rgba(26,29,38,.12);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .2s;
+      transition: opacity .35s ease;
       z-index: 39;
     }
 
@@ -671,7 +730,7 @@
     .progress-fill {
       height: 100%;
       border-radius: 99px;
-      transition: width .4s ease;
+      transition: width .65s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .progress-fill.ok { background: var(--success); }
@@ -745,7 +804,7 @@
       letter-spacing: 0.02em;
       cursor: pointer;
       font-family: var(--font-body);
-      transition: background .15s;
+      transition: background .25s ease;
     }
 
     .btn-primary { background: var(--accent); color: white; width: 100%; }
@@ -763,6 +822,11 @@
     /* Budget field */
     .budget-field {
       margin-bottom: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: calc(100% + 56px);
+      margin-left: -28px;
     }
 
     .budget-field-label {
@@ -773,11 +837,12 @@
       text-transform: uppercase;
       color: var(--text-muted);
       margin-bottom: 14px;
+      text-align: center;
     }
 
     .budget-field-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 12px;
     }
 
@@ -791,9 +856,23 @@
       border-radius: 0;
       background: transparent;
       padding: 4px 0;
-      width: 100%;
+      width: 240px;
+      text-align: center;
       color: var(--text);
-      transition: border-color .2s;
+      transition: border-color .35s ease;
+    }
+
+    #budgetAmount::-webkit-outer-spin-button,
+    #budgetAmount::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    #budgetAmount { -moz-appearance: textfield; }
+
+    #budgetAmount:read-only {
+      cursor: default;
+      color: var(--text);
     }
 
     #budgetAmount:focus {
@@ -811,8 +890,49 @@
       flex-shrink: 0;
     }
 
+    #saveBudgetBtn {
+      font-family: var(--font-futuristic);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 10px 28px;
+      border: 1px solid var(--text);
+      border-radius: var(--radius-sm);
+      background: var(--text);
+      color: white;
+      cursor: pointer;
+      margin-top: 24px;
+      width: auto;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s cubic-bezier(0.16, 1, 0.3, 1), background .25s ease, border-color .25s ease;
+    }
+
+    #saveBudgetBtn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    #saveBudgetBtn.visible { opacity: 1; pointer-events: auto; }
+
+    #editBudgetBtn {
+      font-family: var(--font-futuristic);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s cubic-bezier(0.16, 1, 0.3, 1), color .25s ease, border-color .25s ease;
+    }
+
+    #editBudgetBtn:hover { color: var(--text); border-color: var(--text-muted); }
+    .budget-field-row.has-budget:hover #editBudgetBtn { opacity: 1; pointer-events: auto; }
+
     .budget-compare {
-      border-top: 1px solid var(--border);
       padding-top: 32px;
     }
 
@@ -841,7 +961,6 @@
     .add-expense {
       margin-top: 16px;
       padding-top: 56px;
-      border-top: 1px solid var(--border);
       width: 100%;
     }
 
@@ -903,7 +1022,7 @@
       font-family: var(--font-body);
       background: var(--surface);
       color: var(--text);
-      transition: border-color .15s, box-shadow .15s;
+      transition: border-color .25s ease, box-shadow .25s ease;
     }
 
     input:focus, select:focus, textarea:focus {
@@ -938,7 +1057,7 @@
       font-weight: 500;
       letter-spacing: 0.02em;
       opacity: 0;
-      transition: all .3s;
+      transition: opacity .35s ease, transform .35s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
       z-index: 100;
     }
@@ -950,9 +1069,8 @@
 
     /* Pie chart */
     .dash-chart {
-      margin-bottom: 40px;
-      padding-bottom: 40px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+      padding-bottom: 0;
     }
 
     .dash-chart-inner {
@@ -963,13 +1081,13 @@
     }
 
     #pieChart {
-      width: min(100%, 520px);
+      width: min(100%, 660px);
       height: auto;
     }
 
     .pie-slice {
       cursor: pointer;
-      transition: opacity .2s;
+      transition: opacity .35s ease;
     }
 
     .pie-tooltip {
@@ -981,7 +1099,7 @@
       box-shadow: var(--shadow);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .15s;
+      transition: opacity .25s ease;
       text-align: center;
       min-width: 150px;
       z-index: 200;
@@ -1073,11 +1191,12 @@
 
       <div class="budget-field">
         <div class="budget-field-label">Montant alloué</div>
-        <div class="budget-field-row">
+        <div class="budget-field-row" id="budgetFieldRow">
           <input type="number" id="budgetAmount" step="0.01" min="0" placeholder="0">
           <span class="budget-field-currency">€</span>
+          <button type="button" id="editBudgetBtn">Modifier</button>
         </div>
-        <button class="btn btn-primary" id="saveBudgetBtn" style="margin-top:16px;">Enregistrer</button>
+        <button type="button" id="saveBudgetBtn">Enregistrer</button>
       </div>
 
       <div class="budget-compare" id="budgetCompare"></div>
@@ -1206,6 +1325,7 @@
     <section class="page">
       <div class="page-tag">Annuel</div>
       <h2 class="page-title" id="annualTitle"></h2>
+      <div id="annualChartContainer"></div>
       <div id="annualContent"></div>
     </section>
   </div>
@@ -1233,6 +1353,14 @@
       autre: 'autres',
     };
 
+    function generateId() {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+    }
+
     const STORAGE_KEY = 'kash_data';
     const LEGACY_STORAGE_KEY = 'floww_data';
 
@@ -1240,6 +1368,8 @@
     let currentDate = new Date();
     let hoverTimer = null;
     let activeDetail = null;
+    let annualSelectedMonth = null;
+    let annualClickOutsideHandler = null;
 
     function migrateCategoryId(id) {
       return CAT_MIGRATION[id] || id;
@@ -1512,7 +1642,7 @@
 
     function renderPieChart() {
       const spent = spentByCategory(currentDate);
-      const total = Object.values(spent).reduce((s, v) => s + v, 0);
+      const totalSpentAmt = Object.values(spent).reduce((s, v) => s + v, 0);
       const budget = totalBudget();
       const svg = document.getElementById('pieChart');
       const tooltip = document.getElementById('pieTooltip');
@@ -1520,7 +1650,7 @@
 
       const cx = 280, cy = 220, r = 130;
 
-      if (total === 0) {
+      if (budget === 0 && totalSpentAmt === 0) {
         svg.innerHTML = `
           <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e8eaef" stroke-width="1" stroke-dasharray="4 3"/>
           <text x="${cx}" y="${cy + 4}" text-anchor="middle"
@@ -1529,79 +1659,129 @@
         return;
       }
 
+      // Base = budget si défini, sinon total dépensé
+      const base = budget > 0 ? budget : totalSpentAmt;
+      const remaining = base - totalSpentAmt;
+
       const slices = CATEGORIES
         .filter(c => (spent[c.id] || 0) > 0)
-        .map(c => ({ ...c, value: spent[c.id], pct: spent[c.id] / total }));
+        .map(c => ({ ...c, value: spent[c.id], pct: spent[c.id] / base }));
 
-      const GAP_DEG = slices.length > 1 ? 1 : 0;
+      // Part blanche = solde restant
+      if (remaining > 0) {
+        slices.push({
+          id: 'solde',
+          label: 'Solde restant',
+          color: '#ffffff',
+          strokeColor: '#d1d5db',
+          value: remaining,
+          pct: remaining / base,
+          isRemaining: true,
+        });
+      }
+
+      const GAP_DEG = slices.length > 1 ? 0.8 : 0;
       let angle = -90;
       let paths = '';
-      let annotations = '';
+      const annotData = [];
 
       slices.forEach(slice => {
         const sliceDeg = slice.pct * 360 - GAP_DEG;
         const midRad = (angle + sliceDeg / 2) * Math.PI / 180;
         const startRad = angle * Math.PI / 180;
-        const endRad = (angle + sliceDeg) * Math.PI / 180;
+        const endRad   = (angle + sliceDeg) * Math.PI / 180;
 
         const x1 = (cx + r * Math.cos(startRad)).toFixed(2);
         const y1 = (cy + r * Math.sin(startRad)).toFixed(2);
         const x2 = (cx + r * Math.cos(endRad)).toFixed(2);
         const y2 = (cy + r * Math.sin(endRad)).toFixed(2);
         const largeArc = sliceDeg > 180 ? 1 : 0;
-
-        const pct = Math.round(slice.pct * 100);
-        const pctBudget = budget > 0 ? Math.round((slice.value / budget) * 100) : null;
+        const stroke = slice.strokeColor || '#f8f9fb';
 
         paths += `<path class="pie-slice"
           d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z"
-          fill="${slice.color}" stroke="#f8f9fb" stroke-width="2"
+          fill="${slice.color}" stroke="${stroke}" stroke-width="2"
           data-cat="${slice.id}"
-          data-label="${escapeHtml(slice.label)}"/>`;
+          data-label="${escapeHtml(slice.label)}"
+          data-value="${formatCurrency(slice.value)}"
+          data-remaining="${slice.isRemaining ? '1' : '0'}"/>`;
 
-        // Annotation : trait + label extérieur
         const elbowR = r + 22;
-        const lx1 = cx + (r + 4) * Math.cos(midRad);
-        const ly1 = cy + (r + 4) * Math.sin(midRad);
-        const lx2 = cx + elbowR * Math.cos(midRad);
-        const ly2 = cy + elbowR * Math.sin(midRad);
+        const lx1    = cx + (r + 4) * Math.cos(midRad);
+        const ly1    = cy + (r + 4) * Math.sin(midRad);
+        const lx2    = cx + elbowR   * Math.cos(midRad);
+        const ly2    = cy + elbowR   * Math.sin(midRad);
         const isRight = Math.cos(midRad) >= 0;
-        const lx3 = lx2 + (isRight ? 24 : -24);
-        const ly3 = ly2;
-        const textX = lx3 + (isRight ? 5 : -5);
-        const anchor = isRight ? 'start' : 'end';
         const shortLabel = slice.label.length > 13 ? slice.label.slice(0, 12) + '…' : slice.label;
 
-        annotations += `
-          <polyline points="${lx1.toFixed(1)},${ly1.toFixed(1)} ${lx2.toFixed(1)},${ly2.toFixed(1)} ${lx3.toFixed(1)},${ly3.toFixed(1)}"
-            fill="none" stroke="#94a3b8" stroke-width="1.5" pointer-events="none"/>
-          <text x="${textX.toFixed(1)}" y="${(ly3 - 4).toFixed(1)}" text-anchor="${anchor}" pointer-events="none"
-            font-family="Josefin Sans, sans-serif" font-size="18" font-weight="700" fill="#1a1d26">${pct}%</text>
-          <text x="${textX.toFixed(1)}" y="${(ly3 + 13).toFixed(1)}" text-anchor="${anchor}" pointer-events="none"
-            font-family="Josefin Sans, sans-serif" font-size="11" font-weight="600" fill="#374151" letter-spacing="0.5">${escapeHtml(shortLabel)}</text>`;
+        annotData.push({
+          lx1, ly1, lx2, lY: ly2, isRight,
+          pct: Math.round(slice.pct * 100), shortLabel,
+          labelColor: slice.isRemaining ? '#9ca3af' : '#1a1d26',
+          subColor:   slice.isRemaining ? '#9ca3af' : '#374151',
+          lineColor:  slice.isRemaining ? '#d1d5db' : '#94a3b8',
+        });
 
         angle += slice.pct * 360;
+      });
+
+      // Deconflict labels per side (push overlapping ones down)
+      const MIN_SPACING = 36;
+      function deconflictPie(arr) {
+        const sorted = [...arr].sort((a, b) => a.lY - b.lY);
+        for (let i = 1; i < sorted.length; i++) {
+          if (sorted[i].lY - sorted[i - 1].lY < MIN_SPACING)
+            sorted[i].lY = sorted[i - 1].lY + MIN_SPACING;
+        }
+        return sorted;
+      }
+
+      const rightAnnots = deconflictPie(annotData.filter(a =>  a.isRight));
+      const leftAnnots  = deconflictPie(annotData.filter(a => !a.isRight));
+
+      let annotations = '';
+      [...rightAnnots, ...leftAnnots].forEach(({ lx1, ly1, lx2, lY, isRight, pct, shortLabel, labelColor, subColor, lineColor }) => {
+        const lx3   = lx2 + (isRight ? 24 : -24);
+        const textX = lx3 + (isRight ?  5 :  -5);
+        const anchor = isRight ? 'start' : 'end';
+
+        annotations += `
+          <polyline points="${lx1.toFixed(1)},${ly1.toFixed(1)} ${lx2.toFixed(1)},${lY.toFixed(1)} ${lx3.toFixed(1)},${lY.toFixed(1)}"
+            fill="none" stroke="${lineColor}" stroke-width="1.5" pointer-events="none"/>
+          <text x="${textX.toFixed(1)}" y="${(lY - 4).toFixed(1)}" text-anchor="${anchor}" pointer-events="none"
+            font-family="Josefin Sans, sans-serif" font-size="18" font-weight="700" fill="${labelColor}">${pct}%</text>
+          <text x="${textX.toFixed(1)}" y="${(lY + 13).toFixed(1)}" text-anchor="${anchor}" pointer-events="none"
+            font-family="Josefin Sans, sans-serif" font-size="11" font-weight="600" fill="${subColor}" letter-spacing="0.5">${escapeHtml(shortLabel)}</text>`;
       });
 
       svg.innerHTML = paths + annotations;
 
       svg.querySelectorAll('.pie-slice').forEach(path => {
         path.addEventListener('mouseenter', () => {
+          const isRemaining = path.dataset.remaining === '1';
           const catId = path.dataset.cat;
-          const catExpenses = getExpensesFor(currentDate)
-            .filter(e => migrateCategoryId(e.category) === catId);
-          const descriptions = catExpenses
-            .map(e => e.description || formatDate(e.date))
-            .filter(Boolean);
 
           if (tooltip) {
-            tooltip.innerHTML = `
-              <div class="pie-tooltip-title">${path.dataset.label}</div>
-              <div class="pie-tooltip-list">
-                ${descriptions.length
-                  ? descriptions.map(d => `<div class="pie-tooltip-item">— ${escapeHtml(d)}</div>`).join('')
-                  : '<div class="pie-tooltip-empty">Aucune description</div>'}
-              </div>`;
+            if (isRemaining) {
+              tooltip.innerHTML = `
+                <div class="pie-tooltip-title">${path.dataset.label}</div>
+                <div class="pie-tooltip-list">
+                  <div class="pie-tooltip-item" style="font-weight:500;">${path.dataset.value}</div>
+                </div>`;
+            } else {
+              const catExpenses = getExpensesFor(currentDate)
+                .filter(e => migrateCategoryId(e.category) === catId);
+              const descriptions = catExpenses
+                .map(e => e.description || formatDate(e.date))
+                .filter(Boolean);
+              tooltip.innerHTML = `
+                <div class="pie-tooltip-title">${path.dataset.label}</div>
+                <div class="pie-tooltip-list">
+                  ${descriptions.length
+                    ? descriptions.map(d => `<div class="pie-tooltip-item">— ${escapeHtml(d)}</div>`).join('')
+                    : '<div class="pie-tooltip-empty">Aucune description</div>'}
+                </div>`;
+            }
             tooltip.classList.add('visible');
           }
         });
@@ -1663,8 +1843,24 @@
       const previous = totalBudget(prev);
 
       const input = document.getElementById('budgetAmount');
+      const saveBtn = document.getElementById('saveBudgetBtn');
+      const row = document.getElementById('budgetFieldRow');
+
       if (input && document.activeElement !== input) {
         input.value = current > 0 ? current : '';
+      }
+
+      if (row && saveBtn && input) {
+        if (current > 0) {
+          row.classList.add('has-budget');
+          saveBtn.classList.remove('visible');
+          input.readOnly = true;
+        } else {
+          row.classList.remove('has-budget');
+          input.readOnly = false;
+          const val = parseFloat(input.value);
+          saveBtn.classList.toggle('visible', val > 0);
+        }
       }
 
       const compareEl = document.getElementById('budgetCompare');
@@ -1713,9 +1909,303 @@
       });
 
       bindExpenseDelete();
+      initExpenseCatRows();
+    }
+
+    function initExpenseCatRows() {
+      document.querySelectorAll('.expense-cat-row').forEach(row => {
+        if (row._catRowBound) return;
+        row._catRowBound = true;
+        const detail = row.querySelector('.expense-cat-detail');
+        if (!detail) return;
+        row.addEventListener('mouseenter', () => {
+          detail.style.height = detail.scrollHeight + 'px';
+        });
+        row.addEventListener('mouseleave', () => {
+          detail.style.height = '0';
+        });
+      });
     }
 
     // --- Annual budget ---
+
+    function getAnnualMonthData(year) {
+      const LABELS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+      return LABELS.map((label, i) => {
+        const key = `${year}-${String(i+1).padStart(2,'0')}`;
+        const b = (state.monthBudgets || {})[key] || 0;
+        const exps = state.expenses.filter(e => e.date.startsWith(key));
+        const s = exps.reduce((sum, e) => sum + e.amount, 0);
+        const catMap = {};
+        CATEGORIES.forEach(c => { catMap[c.id] = 0; });
+        exps.forEach(e => {
+          const id = migrateCategoryId(e.category);
+          catMap[id] = (catMap[id] || 0) + e.amount;
+        });
+        return { month: i, key, label, budget: b, spent: s, categories: catMap };
+      });
+    }
+
+    function animateViewBox(svgEl, from, to, duration, onComplete) {
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - t, 4);
+        svgEl.setAttribute('viewBox', from.map((v, j) => (v + (to[j]-v)*ease).toFixed(2)).join(' '));
+        if (t < 1) requestAnimationFrame(step);
+        else if (onComplete) onComplete();
+      }
+      requestAnimationFrame(step);
+    }
+
+    function buildAnnualSVG(data, selectedMonth, viewBox, showAnnotations = true) {
+      const W = 700, H = 280, mT = 20, mB = 36;
+      const chartH = H - mT - mB;
+      const groupW = W / 12;
+      const barW = Math.floor(groupW * 0.33);
+      const maxVal = Math.max(...data.map(d => Math.max(d.budget, d.spent)), 100);
+      const now = new Date();
+      const year = parseInt(data[0].key.slice(0, 4));
+      let content = '';
+
+      // Gridlines
+      [0.25, 0.5, 0.75, 1].forEach(f => {
+        const y = (mT + chartH - chartH * f).toFixed(1);
+        content += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#e8eaef" stroke-width="0.5" pointer-events="none"/>`;
+      });
+
+      data.forEach((d, i) => {
+        const gx = i * groupW;
+        const cx = gx + groupW / 2;
+        const bx = (cx - barW - 2).toFixed(1);
+        const sx = (cx + 2).toFixed(1);
+        const isCurrent = d.month === now.getMonth() && year === now.getFullYear();
+        const isSelected = selectedMonth === i;
+        const faded = selectedMonth !== null && !isSelected;
+        const opacity = faded ? '0.12' : '1';
+
+        const bh = d.budget > 0 ? Math.max((d.budget / maxVal) * chartH, 2) : 0;
+        const sh = d.spent > 0 ? Math.max((d.spent / maxVal) * chartH, 2) : 0;
+        const by = (mT + chartH - bh).toFixed(1);
+
+        content += `<g class="annual-bar-group" data-month="${i}" style="cursor:pointer;opacity:${opacity};transition:opacity .25s;">`;
+
+        // Budget bar (left)
+        if (d.budget > 0) {
+          content += `<rect x="${bx}" y="${by}" width="${barW}" height="${bh.toFixed(1)}" fill="#64748b" rx="2" opacity="${isCurrent ? '0.9' : '0.5'}"/>`;
+        }
+
+        // Expense bar (right): plain or stacked
+        if (d.spent > 0) {
+          if (isSelected) {
+            // Pre-compute segment positions
+            const segs = CATEGORIES.filter(c => d.categories[c.id] > 0).map(c => {
+              const ch = (d.categories[c.id] / maxVal) * chartH;
+              const pct = Math.round((d.categories[c.id] / d.spent) * 100);
+              return { ...c, value: d.categories[c.id], pct, ch };
+            });
+            let stackBottom = mT + chartH;
+            const segPos = segs.map(seg => {
+              stackBottom -= seg.ch;
+              return { ...seg, y: stackBottom, midY: stackBottom + seg.ch / 2 };
+            });
+
+            // Draw rects
+            segPos.forEach(seg => {
+              content += `<rect class="annual-cat-seg" x="${sx}" y="${seg.y.toFixed(1)}" width="${barW}" height="${seg.ch.toFixed(1)}"
+                fill="${seg.color}" rx="1"
+                data-label="${escapeHtml(seg.label)}" data-value="${escapeHtml(formatCurrency(seg.value))}" data-pct="${seg.pct}"/>`;
+            });
+
+            // Annotations (pie-chart style), both sides, deconflicted — only when zoomed + showAnnotations
+            if (viewBox && showAnnotations) {
+              const s       = viewBox[2] / W;
+              const barLX   = parseFloat(sx);           // left edge of expense bar (line passes over budget bar)
+              const barRX   = parseFloat(sx) + barW;    // right edge of expense bar
+              const fsPct   = (18 * s).toFixed(2);
+              const fsLbl   = (11 * s).toFixed(2);
+              const sw      = (1.5 * s).toFixed(2);
+              const minGap  = 15 * s;                  // min vertical spacing between labels
+
+              // Alternate sides: even index → right, odd index → left
+              const withSide = segPos.map((seg, idx) => ({ ...seg, side: idx % 2 === 0 ? 'r' : 'l' }));
+
+              // Deconflict: push overlapping labels apart (top-to-bottom pass)
+              function deconflict(segs) {
+                const arr = segs.map(seg => ({ ...seg, lY: seg.midY }));
+                for (let i = 1; i < arr.length; i++) {
+                  if (arr[i].lY - arr[i - 1].lY < minGap)
+                    arr[i].lY = arr[i - 1].lY + minGap;
+                }
+                return arr;
+              }
+
+              const right = deconflict(withSide.filter(s => s.side === 'r').sort((a, b) => a.midY - b.midY));
+              const left  = deconflict(withSide.filter(s => s.side === 'l').sort((a, b) => a.midY - b.midY));
+
+              [...right, ...left].forEach((seg, idx) => {
+                const isRight    = seg.side === 'r';
+                const edgeX      = isRight ? barRX : barLX;
+                const sign       = isRight ? 1 : -1;
+                const anchor     = isRight ? 'start' : 'end';
+                const reach      = isRight ? 68 : 42; // droite plus long pour passer la barre budget voisine
+                const p1x        = (edgeX + sign *  3 * s).toFixed(2);
+                const p2x        = (edgeX + sign * 18 * s).toFixed(2);
+                const p3x        = (edgeX + sign * (reach - 4) * s).toFixed(2);
+                const tx         = (edgeX + sign *  reach      * s).toFixed(2);
+                const shortLabel = seg.label.length > 13 ? seg.label.slice(0, 12) + '…' : seg.label;
+                const delay      = `animation-delay:${(idx * 0.11).toFixed(2)}s`;
+
+                content += `
+                  <polyline class="annual-annot" style="${delay}" points="${p1x},${seg.midY.toFixed(2)} ${p2x},${seg.lY.toFixed(2)} ${p3x},${seg.lY.toFixed(2)}"
+                    fill="none" stroke="${seg.color}" stroke-width="${sw}" pointer-events="none"/>
+                  <text class="annual-annot" style="${delay}" x="${tx}" y="${(seg.lY - 3 * s).toFixed(2)}" text-anchor="${anchor}" pointer-events="none"
+                    font-family="Josefin Sans, sans-serif" font-size="${fsPct}" font-weight="700" fill="#1a1d26">${seg.pct}%</text>
+                  <text class="annual-annot" style="${delay}" x="${tx}" y="${(seg.lY + 10 * s).toFixed(2)}" text-anchor="${anchor}" pointer-events="none"
+                    font-family="Josefin Sans, sans-serif" font-size="${fsLbl}" font-weight="600" fill="#374151">${escapeHtml(shortLabel)}</text>`;
+              });
+            }
+          } else {
+            const sy2 = (mT + chartH - sh).toFixed(1);
+            content += `<rect x="${sx}" y="${sy2}" width="${barW}" height="${sh.toFixed(1)}" fill="#8c2d42" rx="2" opacity="0.7"/>`;
+          }
+        }
+
+        // Invisible hit area
+        content += `<rect x="${gx.toFixed(1)}" y="${mT}" width="${groupW.toFixed(1)}" height="${chartH + 12}" fill="transparent"/>`;
+        content += `</g>`;
+
+        // Month label
+        const lc = faded ? '#d1d5db' : (isCurrent ? '#1a1d26' : '#9ca3af');
+        content += `<text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" pointer-events="none"
+          font-family="Josefin Sans, sans-serif" font-size="9" font-weight="${isCurrent ? '700' : '600'}"
+          letter-spacing="0.5" fill="${lc}">${d.label}</text>`;
+      });
+
+      // Baseline
+      content += `<line x1="0" y1="${mT + chartH}" x2="${W}" y2="${mT + chartH}" stroke="#e8eaef" stroke-width="1" pointer-events="none"/>`;
+
+      const vb = viewBox ? viewBox.join(' ') : `0 0 ${W} ${H}`;
+      return `<svg id="annualChartSvg" viewBox="${vb}" width="100%" style="display:block;">${content}</svg>`;
+    }
+
+    function renderAnnualChart() {
+      const container = document.getElementById('annualChartContainer');
+      if (!container) return;
+
+      const year = currentDate.getFullYear();
+      const data = getAnnualMonthData(year);
+      const W = 700, groupW = W / 12;
+
+      let targetVB = null;
+      if (annualSelectedMonth !== null) {
+        const i = annualSelectedMonth;
+        const vbW = groupW * 4;
+        const vbX = Math.max(0, Math.min((i - 1.5) * groupW, W - vbW));
+        targetVB = [vbX, 0, vbW, 280];
+      }
+
+      const legend = `<div class="annual-chart-legend">
+        <span class="annual-legend-item"><span class="annual-legend-dot" style="background:#64748b;opacity:.7;"></span>Budget</span>
+        <span class="annual-legend-item"><span class="annual-legend-dot" style="background:#8c2d42;opacity:.8;"></span>Dépenses</span>
+      </div>`;
+      const hint = annualSelectedMonth !== null
+        ? 'Cliquez à nouveau sur le mois pour revenir'
+        : 'Cliquez sur un mois pour voir le détail';
+
+      const sy = window.scrollY;
+      container.innerHTML =
+        buildAnnualSVG(data, annualSelectedMonth, targetVB) +
+        legend +
+        `<div class="annual-chart-hint">${hint}</div>`;
+      window.scrollTo(0, sy);
+
+      // Bind category hover tooltips
+      const tooltip = document.getElementById('pieTooltip');
+      container.querySelectorAll('.annual-cat-seg').forEach(rect => {
+        rect.addEventListener('mouseenter', () => {
+          if (!tooltip) return;
+          tooltip.innerHTML = `
+            <div class="pie-tooltip-title">${rect.dataset.label}</div>
+            <div class="pie-tooltip-list">
+              <div class="pie-tooltip-item">${rect.dataset.value} · ${rect.dataset.pct}%</div>
+            </div>`;
+          tooltip.classList.add('visible');
+        });
+        rect.addEventListener('mousemove', e => {
+          if (tooltip) {
+            tooltip.style.left = (e.clientX + 18) + 'px';
+            tooltip.style.top = (e.clientY - 12) + 'px';
+          }
+        });
+        rect.addEventListener('mouseleave', () => {
+          if (tooltip) tooltip.classList.remove('visible');
+        });
+      });
+
+      // Clic n'importe où sur la page (sauf barres) → zoom arrière
+      const vbW = groupW * 4;
+      if (annualClickOutsideHandler) document.removeEventListener('click', annualClickOutsideHandler);
+      annualClickOutsideHandler = (e) => {
+        if (annualSelectedMonth !== null && !e.target.closest('.annual-bar-group')) {
+          const svgEl2 = container.querySelector('#annualChartSvg');
+          if (!svgEl2) return;
+          const curVbX = Math.max(0, Math.min((annualSelectedMonth - 1.5) * groupW, W - vbW));
+          animateViewBox(svgEl2, [curVbX, 0, vbW, 280], [0, 0, W, 280], 600, () => {
+            annualSelectedMonth = null;
+            renderAnnualChart();
+          });
+        }
+      };
+      document.addEventListener('click', annualClickOutsideHandler);
+
+      // Bind clicks
+      container.querySelectorAll('.annual-bar-group').forEach(g => {
+        g.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mi = parseInt(g.dataset.month);
+          const svgEl = container.querySelector('#annualChartSvg');
+
+          if (annualSelectedMonth === mi) {
+            // Zoom out
+            const curVbX = Math.max(0, Math.min((mi - 1.5) * groupW, W - vbW));
+            animateViewBox(svgEl, [curVbX, 0, vbW, 280], [0, 0, W, 280], 600, () => {
+              annualSelectedMonth = null;
+              renderAnnualChart();
+            });
+          } else {
+            const prevSel = annualSelectedMonth;
+            annualSelectedMonth = mi;
+            const toVbX = Math.max(0, Math.min((mi - 1.5) * groupW, W - vbW));
+
+            let fromVB = [0, 0, W, 280];
+            if (prevSel !== null) {
+              const prevVbX = Math.max(0, Math.min((prevSel - 1.5) * groupW, W - vbW));
+              fromVB = [prevVbX, 0, vbW, 280];
+            }
+
+            const sy2 = window.scrollY;
+            container.innerHTML = buildAnnualSVG(data, mi, fromVB, false) +
+              legend +
+              `<div class="annual-chart-hint">Cliquez à nouveau sur le mois pour revenir</div>`;
+            window.scrollTo(0, sy2);
+
+            const newSvg = container.querySelector('#annualChartSvg');
+            animateViewBox(newSvg, fromVB, [toVbX, 0, vbW, 280], 600, () => {
+              renderAnnualChart();
+              requestAnimationFrame(() => {
+                const rect = container.getBoundingClientRect();
+                const axisBottom = rect.top + window.scrollY + rect.height;
+                const target = axisBottom - window.innerHeight + 32;
+                if (target > window.scrollY) {
+                  window.scrollTo({ top: target, behavior: 'smooth' });
+                }
+              });
+            });
+          }
+        });
+      });
+    }
 
     function renderAnnualPage() {
       const year = currentDate.getFullYear();
@@ -1724,51 +2214,7 @@
       if (!titleEl || !contentEl) return;
 
       titleEl.textContent = String(year);
-
-      const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin',
-                      'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-      const now = new Date();
-      let totalBudgetYear = 0, totalSpentYear = 0;
-
-      const rows = MONTHS.map((name, i) => {
-        const d = new Date(year, i, 1);
-        const key = monthKey(d);
-        const b = (state.monthBudgets || {})[key] || 0;
-        const s = state.expenses
-          .filter(e => e.date.startsWith(key))
-          .reduce((sum, e) => sum + e.amount, 0);
-        totalBudgetYear += b;
-        totalSpentYear += s;
-        const balance = b - s;
-        const isCurrent = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-        const balCls = balance > 0 ? 'pos' : balance < 0 ? 'neg' : '';
-        return `<tr class="${isCurrent ? 'annual-current' : ''}">
-          <td>${name}</td>
-          <td>${b > 0 ? formatCurrency(b) : '—'}</td>
-          <td>${s > 0 ? formatCurrency(s) : '—'}</td>
-          <td class="${balCls}">${b > 0 || s > 0 ? formatCurrency(balance) : '—'}</td>
-        </tr>`;
-      }).join('');
-
-      const totalBalance = totalBudgetYear - totalSpentYear;
-      const totalBalCls = totalBalance > 0 ? 'pos' : totalBalance < 0 ? 'neg' : '';
-
-      contentEl.innerHTML = `
-        <table class="annual-table">
-          <thead><tr>
-            <th>Mois</th>
-            <th>Budget</th>
-            <th>Dépenses</th>
-            <th>Solde</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-          <tfoot><tr class="annual-total">
-            <td>Total</td>
-            <td>${totalBudgetYear > 0 ? formatCurrency(totalBudgetYear) : '—'}</td>
-            <td>${totalSpentYear > 0 ? formatCurrency(totalSpentYear) : '—'}</td>
-            <td class="${totalBalCls}">${totalBudgetYear > 0 || totalSpentYear > 0 ? formatCurrency(totalBalance) : '—'}</td>
-          </tr></tfoot>
-        </table>`;
+      renderAnnualChart();
     }
 
     function render() {
@@ -1793,6 +2239,28 @@
         document.title = TAB_TITLES[btn.dataset.tab] + ' — Kash';
         if (btn.dataset.tab === 'annual') renderAnnualPage();
       });
+    });
+
+    // --- Budget field interaction ---
+
+    function updateBudgetButtons() {
+      const input = document.getElementById('budgetAmount');
+      const saveBtn = document.getElementById('saveBudgetBtn');
+      const row = document.getElementById('budgetFieldRow');
+      if (!input || !saveBtn || !row) return;
+      const val = parseFloat(input.value);
+      saveBtn.classList.toggle('visible', val > 0);
+    }
+
+    document.getElementById('budgetAmount').addEventListener('input', updateBudgetButtons);
+
+    document.getElementById('editBudgetBtn').addEventListener('click', () => {
+      const input = document.getElementById('budgetAmount');
+      const row = document.getElementById('budgetFieldRow');
+      input.readOnly = false;
+      row.classList.remove('has-budget');
+      input.focus();
+      updateBudgetButtons();
     });
 
     // --- Events ---
@@ -1828,7 +2296,7 @@
         if (!category) showToast('Sélectionnez une catégorie');
         return;
       }
-      state.expenses.push({ id: crypto.randomUUID(), amount, date, category, description });
+      state.expenses.push({ id: generateId(), amount, date, category, description });
       saveState();
       e.target.reset();
       document.getElementById('date').value = new Date().toISOString().slice(0, 10);
@@ -1839,12 +2307,14 @@
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       currentDate.setMonth(currentDate.getMonth() - 1);
+      annualSelectedMonth = null;
       hideDetail();
       render();
     });
 
     document.getElementById('nextMonth').addEventListener('click', () => {
       currentDate.setMonth(currentDate.getMonth() + 1);
+      annualSelectedMonth = null;
       hideDetail();
       render();
     });
