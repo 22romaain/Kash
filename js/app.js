@@ -34,6 +34,7 @@
     let activeDetail = null;
     let annualSelectedMonth = null;
     let annualClickOutsideHandler = null;
+    let insightsState = { loading: false, analysis: null, error: null, forMonth: null };
 
     function migrateCategoryId(id) {
       return CAT_MIGRATION[id] || id;
@@ -1071,9 +1072,122 @@
       renderAnnualPage();
     }
 
+    // --- Insights ---
+
+    function formatAnalysis(text) {
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      const lines = escaped.split('\n');
+      let html = '';
+      let inList = false;
+
+      for (const raw of lines) {
+        const line = raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        const isNumbered = /^(\d+)\.\s+/.test(line);
+        const isBullet  = /^[-•]\s+/.test(line);
+
+        if (isNumbered) {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += `<div class="insights-section-title">${line.replace(/^\d+\.\s+/, '')}</div>`;
+        } else if (isBullet) {
+          if (!inList) { html += '<ul class="insights-list">'; inList = true; }
+          html += `<li>${line.replace(/^[-•]\s+/, '')}</li>`;
+        } else if (line.trim() === '') {
+          if (inList) { html += '</ul>'; inList = false; }
+        } else {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += `<p class="insights-para">${line}</p>`;
+        }
+      }
+      if (inList) html += '</ul>';
+      return html;
+    }
+
+    async function runAnalysis() {
+      const key = monthKey(currentDate);
+      const expenses = (state.expenses || []).filter(e => e.date && e.date.startsWith(key));
+      if (!expenses.length) return;
+
+      insightsState = { loading: true, analysis: null, error: null, forMonth: key };
+      renderInsightsPage();
+
+      try {
+        const res = await fetch('https://kash-backend-production-8350.up.railway.app/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            expenses: expenses.map(e => ({
+              description: e.description || '',
+              amount: e.amount,
+              category: getCat(e.category).label,
+              date: e.date,
+            })),
+          }),
+        });
+        if (!res.ok) throw new Error('Erreur serveur ' + res.status);
+        const data = await res.json();
+        insightsState = { loading: false, analysis: data.analysis, error: null, forMonth: key };
+      } catch (err) {
+        insightsState = { loading: false, analysis: null, error: 'Impossible de contacter le serveur. Vérifiez votre connexion.', forMonth: key };
+      }
+
+      renderInsightsPage();
+    }
+
+    function renderInsightsPage() {
+      const titleEl  = document.getElementById('insightsTitle');
+      const contentEl = document.getElementById('insightsContent');
+      if (!titleEl || !contentEl) return;
+
+      const key      = monthKey(currentDate);
+      const expenses = (state.expenses || []).filter(e => e.date && e.date.startsWith(key));
+      const total    = expenses.reduce((s, e) => s + e.amount, 0);
+
+      // Reset cached analysis when month changes
+      if (insightsState.forMonth && insightsState.forMonth !== key) {
+        insightsState = { loading: false, analysis: null, error: null, forMonth: null };
+      }
+
+      titleEl.textContent = formatMonth(currentDate);
+
+      const summaryHtml = expenses.length
+        ? `<div class="insights-summary">
+             <span class="insights-summary-count">${expenses.length} dépense${expenses.length > 1 ? 's' : ''}</span>
+             <span class="insights-sep">·</span>
+             <span class="insights-summary-total">${formatCurrency(total)}</span>
+           </div>`
+        : `<div class="insights-empty">Aucune dépense enregistrée pour ce mois.</div>`;
+
+      let resultHtml = '';
+      if (insightsState.loading) {
+        resultHtml = `<div class="insights-loading">
+          <span></span><span></span><span></span>
+        </div>`;
+      } else if (insightsState.error) {
+        resultHtml = `<div class="insights-error">${insightsState.error}</div>`;
+      } else if (insightsState.analysis) {
+        resultHtml = `<div class="insights-result">${formatAnalysis(insightsState.analysis)}</div>`;
+      }
+
+      contentEl.innerHTML = `
+        ${summaryHtml}
+        <button class="btn insights-analyze-btn" id="insightsAnalyzeBtn"
+          ${expenses.length === 0 || insightsState.loading ? 'disabled' : ''}>
+          ${insightsState.loading ? 'Analyse en cours…' : 'Analyser mes dépenses'}
+        </button>
+        ${resultHtml}
+      `;
+
+      const btn = document.getElementById('insightsAnalyzeBtn');
+      if (btn) btn.addEventListener('click', runAnalysis);
+    }
+
     // --- Tab switching ---
 
-    const TAB_TITLES = { overview: 'Overview', annual: 'Budget annualisé' };
+    const TAB_TITLES = { overview: 'Overview', annual: 'Budget annualisé', insights: 'Insights' };
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1083,6 +1197,7 @@
         document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
         document.title = TAB_TITLES[btn.dataset.tab] + ' — Kash';
         if (btn.dataset.tab === 'annual') renderAnnualPage();
+        if (btn.dataset.tab === 'insights') renderInsightsPage();
       });
     });
 
