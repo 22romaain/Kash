@@ -1287,6 +1287,120 @@
       document.getElementById('chrome').classList.toggle('scrolled', window.scrollY > 20);
     });
 
+    // --- Insights ---
+
+    function renderInsightsResult(data) {
+      const container = document.getElementById('insightsResult');
+      if (!container) return;
+
+      // Cas : réponse vide
+      if (!data) {
+        container.innerHTML = `<div class="insights-error">La réponse de l'API est vide.</div>`;
+        return;
+      }
+
+      // Si l'API renvoie un objet structuré avec des champs connus
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        const knownSections = [
+          { key: 'summary',         label: 'Résumé' },
+          { key: 'highlights',      label: 'Points clés' },
+          { key: 'recommendations', label: 'Recommandations' },
+          { key: 'analysis',        label: 'Analyse' },
+          { key: 'insights',        label: 'Insights' },
+          { key: 'message',         label: 'Message' },
+          { key: 'text',            label: 'Analyse' },
+        ];
+        const blocks = knownSections
+          .filter(s => data[s.key] != null && String(data[s.key]).trim() !== '')
+          .map((s, i) => {
+            const content = Array.isArray(data[s.key])
+              ? data[s.key].map(item => `• ${typeof item === 'object' ? JSON.stringify(item) : item}`).join('\n')
+              : String(data[s.key]);
+            return `<div class="insights-block" style="animation-delay:${i * 0.08}s">
+              <div class="insights-block-label">${s.label}</div>
+              <div class="insights-block-text">${escapeHtml(content)}</div>
+            </div>`;
+          });
+
+        if (blocks.length > 0) {
+          container.innerHTML = blocks.join('');
+          return;
+        }
+
+        // Objet non reconnu → dump propre
+        container.innerHTML = `<div class="insights-block">
+          <div class="insights-block-label">Réponse</div>
+          <div class="insights-raw">${escapeHtml(JSON.stringify(data, null, 2))}</div>
+        </div>`;
+        return;
+      }
+
+      // Chaîne ou autre → affichage direct
+      const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      container.innerHTML = `<div class="insights-block">
+        <div class="insights-block-label">Analyse</div>
+        <div class="insights-block-text">${escapeHtml(text)}</div>
+      </div>`;
+    }
+
+    async function runInsightsAnalysis() {
+      const btn    = document.getElementById('analyzeBtn');
+      const loader = document.getElementById('insightsLoader');
+      const result = document.getElementById('insightsResult');
+      if (!btn || !loader || !result) return;
+
+      // Collecter les dépenses du mois courant
+      const now = new Date();
+      const key = monthKey(now);
+      const expenses = state.expenses.filter(e => e.date.startsWith(key)).map(e => ({
+        amount:      e.amount,
+        date:        e.date,
+        category:    getCat(e.category).label,
+        description: e.description || '',
+      }));
+
+      if (expenses.length === 0) {
+        result.innerHTML = `<div class="insights-empty">
+          <div class="insights-empty-icon">✦</div>
+          Aucune dépense enregistrée pour ${formatMonth(now)}.<br>Ajoutez des dépenses pour obtenir une analyse.
+        </div>`;
+        return;
+      }
+
+      // État de chargement
+      btn.disabled = true;
+      loader.classList.add('visible');
+      result.innerHTML = '';
+
+      try {
+        const res = await fetch('https://kash-backend-production-8350.up.railway.app/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            month:    key,
+            budget:   totalBudget(now),
+            expenses,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`Erreur serveur : ${res.status} ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        renderInsightsResult(data);
+      } catch (err) {
+        result.innerHTML = `<div class="insights-error">
+          Impossible de récupérer l'analyse.<br><span style="font-weight:400;opacity:.75;">${escapeHtml(err.message)}</span>
+        </div>`;
+      } finally {
+        loader.classList.remove('visible');
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('analyzeBtn').addEventListener('click', runInsightsAnalysis);
+
     // Init
     document.getElementById('date').value = new Date().toISOString().slice(0, 10);
     render();

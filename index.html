@@ -205,8 +205,24 @@
   <div class="tab-view" id="tab-insights">
     <section class="page">
       <div class="page-tag">IA</div>
-      <h2 class="page-title" id="insightsTitle"></h2>
-      <div id="insightsContent"></div>
+      <h2 class="page-title">Insights</h2>
+
+      <div class="insights-intro">
+        <p class="insights-desc">Analyse intelligente de vos dépenses du mois en cours. L'IA identifie vos tendances, signale les postes importants et vous donne des recommandations personnalisées.</p>
+        <button id="analyzeBtn" class="insights-cta">
+          <span class="insights-cta-icon">✦</span>
+          Analyser mes dépenses
+        </button>
+      </div>
+
+      <div class="insights-loader" id="insightsLoader" aria-hidden="true">
+        <div class="insights-loader-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="insights-loader-label">Analyse en cours…</div>
+      </div>
+
+      <div class="insights-result" id="insightsResult"></div>
     </section>
   </div>
 
