@@ -10,18 +10,6 @@
       { id: 'autres',                   label: 'Autres',                      color: '#9ca3af' },
     ];
 
-    // Palette pour les catégories prévisionnelles (Budget)
-    const COLOR_PALETTE = [
-      '#6b1a2e','#8c2d42','#a84558','#b86878','#c08d98','#bfaab0',
-      '#9ca3af','#64748b','#374151','#0ea5e9','#10b981','#f59e0b',
-      '#8b5cf6','#ef4444','#1a1d26',
-    ];
-
-    function nextCategoryColor() {
-      const used = new Set((state.categories || []).map(c => c.color));
-      return COLOR_PALETTE.find(c => !used.has(c))
-        || COLOR_PALETTE[(state.categories || []).length % COLOR_PALETTE.length];
-    }
 
     const CAT_MIGRATION = {
       necessaire: 'alimentation-necessaires',
@@ -85,7 +73,7 @@
           return data;
         }
       } catch {}
-      return { expenses: [], budgets: {}, monthBudgets: {}, categories: [] };
+      return { expenses: [], budgets: {}, monthBudgets: {} };
     }
 
     function saveState() {
@@ -671,37 +659,9 @@
       const catsEl = document.getElementById('budgetCats');
       if (!catsEl) return;
 
-      const cats = state.categories || [];
       const spent = spentByCategory(currentDate);
       const budget = getBudgetFor(currentDate);
-
-      const addFormHtml = `
-        <div class="budget-add-cat" id="budgetAddCat">
-          <button class="budget-add-cat-btn" id="budgetAddCatBtn" type="button">
-            <span class="budget-add-cat-btn-icon">+</span>
-            Nouvelle catégorie
-          </button>
-          <div class="budget-add-cat-form" id="budgetAddCatForm">
-            <div class="budget-add-cat-inner">
-              <input type="text" id="newCatName" class="budget-add-cat-input"
-                placeholder="Nom de la catégorie" maxlength="40" autocomplete="off">
-              <button type="button" id="newCatSave" class="budget-cat-save-btn visible">Créer</button>
-            </div>
-          </div>
-        </div>`;
-
-      if (cats.length === 0) {
-        catsEl.innerHTML = `
-          <div class="budget-cats">
-            <div class="page-tag">Par catégorie</div>
-            ${addFormHtml}
-            <p class="budget-cats-empty">Aucune catégorie. Créez-en une pour planifier votre budget.</p>
-          </div>`;
-        bindBudgetCatAdd(catsEl);
-        return;
-      }
-
-      const rows = cats.map(c => {
+      const rows = CATEGORIES.map(c => {
         const s = spent[c.id] || 0;
         const b = budget[c.id] || 0;
         const hasB = b > 0;
@@ -732,19 +692,12 @@
             </div>` : ''}
             <div class="budget-cat-edit-detail">
               <div class="budget-cat-edit-wrap">
-                <div class="budget-cat-name-row">
-                  <input class="budget-cat-name-input" type="text"
-                    value="${escapeHtml(c.label)}" maxlength="40" placeholder="Nom">
-                </div>
                 <div class="budget-cat-input-row">
                   <input class="budget-cat-amount-input" type="number" step="0.01" min="0"
                     value="${b || ''}" placeholder="0">
                   <span class="budget-cat-currency">€</span>
                 </div>
-                <div class="budget-cat-actions">
-                  <button class="budget-cat-save-btn" type="button">Enregistrer</button>
-                  <button class="budget-cat-delete-btn" type="button">Supprimer</button>
-                </div>
+                <button class="budget-cat-save-btn" type="button">Enregistrer</button>
               </div>
             </div>
           </div>`;
@@ -753,27 +706,18 @@
       catsEl.innerHTML = `
         <div class="budget-cats">
           <div class="page-tag">Par catégorie</div>
-          ${addFormHtml}
           <div class="budget-cat-list">${rows}</div>
         </div>`;
-
-      bindBudgetCatAdd(catsEl);
 
       catsEl.querySelectorAll('.budget-cat-entry').forEach(entry => {
         const catId = entry.dataset.cat;
         const editBtn = entry.querySelector('.budget-cat-edit-btn');
         const detail = entry.querySelector('.budget-cat-edit-detail');
         const saveBtn = entry.querySelector('.budget-cat-save-btn');
-        const amountInput = entry.querySelector('.budget-cat-amount-input');
-        const nameInput = entry.querySelector('.budget-cat-name-input');
-        const deleteBtn = entry.querySelector('.budget-cat-delete-btn');
+        const input = entry.querySelector('.budget-cat-amount-input');
 
-        amountInput.addEventListener('input', () => {
-          saveBtn.classList.toggle('visible', true);
-        });
-
-        nameInput.addEventListener('input', () => {
-          saveBtn.classList.toggle('visible', true);
+        input.addEventListener('input', () => {
+          saveBtn.classList.toggle('visible', input.value.trim() !== '');
         });
 
         editBtn.addEventListener('click', () => {
@@ -790,17 +734,12 @@
           } else {
             entry.classList.add('editing');
             detail.style.height = detail.scrollHeight + 'px';
-            setTimeout(() => nameInput.focus(), 200);
+            setTimeout(() => input.focus(), 200);
           }
         });
 
         saveBtn.addEventListener('click', () => {
-          const newName = nameInput.value.trim();
-          if (newName) {
-            const idx = state.categories.findIndex(c => c.id === catId);
-            if (idx !== -1) state.categories[idx].label = newName;
-          }
-          const raw = amountInput.value.trim();
+          const raw = input.value.trim();
           const val = parseFloat(raw);
           const key = monthKey(currentDate);
           if (!state.budgets[key]) state.budgets[key] = {};
@@ -808,52 +747,8 @@
           else delete state.budgets[key][catId];
           saveState();
           render();
-          showToast('Mis à jour');
+          showToast('Budget mis à jour');
         });
-
-        deleteBtn.addEventListener('click', () => {
-          state.categories = state.categories.filter(c => c.id !== catId);
-          Object.keys(state.budgets).forEach(k => { delete state.budgets[k][catId]; });
-          saveState();
-          render();
-          showToast('Catégorie supprimée');
-        });
-      });
-    }
-
-    function bindBudgetCatAdd() {
-      const btn      = document.getElementById('budgetAddCatBtn');
-      const form     = document.getElementById('budgetAddCatForm');
-      const addCat   = document.getElementById('budgetAddCat');
-      const nameInput = document.getElementById('newCatName');
-      const saveBtn  = document.getElementById('newCatSave');
-      if (!btn || !form) return;
-
-      btn.addEventListener('click', () => {
-        const isOpen = addCat.classList.contains('open');
-        if (isOpen) {
-          addCat.classList.remove('open');
-          form.style.height = '0';
-        } else {
-          addCat.classList.add('open');
-          form.style.height = form.scrollHeight + 'px';
-          setTimeout(() => nameInput && nameInput.focus(), 180);
-        }
-      });
-
-      const doCreate = () => {
-        const name = (nameInput.value || '').trim();
-        if (!name) return;
-        if (!state.categories) state.categories = [];
-        state.categories.push({ id: generateId(), label: name, color: nextCategoryColor() });
-        saveState();
-        render();
-        showToast('Catégorie créée');
-      };
-
-      saveBtn.addEventListener('click', doCreate);
-      nameInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') { e.preventDefault(); doCreate(); }
       });
     }
 
