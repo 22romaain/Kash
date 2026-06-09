@@ -1,4 +1,16 @@
 
+    // Catégories fixes — dépenses, graphiques, suivi
+    const CATEGORIES = [
+      { id: 'alimentation-necessaires', label: 'Alimentation et nécessaires', color: '#6b1a2e' },
+      { id: 'logement',                 label: 'Logement',                    color: '#8c2d42' },
+      { id: 'transport',                label: 'Transport',                   color: '#a84558' },
+      { id: 'loisirs',                  label: 'Loisirs',                     color: '#b86878' },
+      { id: 'abonnements',              label: 'Abonnements',                 color: '#c08d98' },
+      { id: 'remboursement',            label: 'Remboursement',               color: '#bfaab0' },
+      { id: 'autres',                   label: 'Autres',                      color: '#9ca3af' },
+    ];
+
+    // Palette pour les catégories prévisionnelles (Budget)
     const COLOR_PALETTE = [
       '#6b1a2e','#8c2d42','#a84558','#b86878','#c08d98','#bfaab0',
       '#9ca3af','#64748b','#374151','#0ea5e9','#10b981','#f59e0b',
@@ -110,7 +122,7 @@
 
     function getCat(id) {
       const migrated = migrateCategoryId(id);
-      const found = (state.categories || []).find(c => c.id === migrated);
+      const found = CATEGORIES.find(c => c.id === migrated);
       if (found) return found;
       return {
         id: migrated,
@@ -131,7 +143,7 @@
 
     function spentByCategory(date) {
       const map = {};
-      (state.categories || []).forEach(c => map[c.id] = 0);
+      CATEGORIES.forEach(c => map[c.id] = 0);
       getExpensesFor(date).forEach(e => {
         const id = migrateCategoryId(e.category);
         map[id] = (map[id] || 0) + e.amount;
@@ -142,14 +154,13 @@
     function renderCategorySelect() {
       const select = document.getElementById('category');
       if (!select) return;
-      const cats = state.categories || [];
       const current = select.value;
       select.innerHTML =
         `<option value="" disabled${!current ? ' selected' : ''}>Sélectionner une catégorie</option>` +
-        cats.map(c =>
+        CATEGORIES.map(c =>
           `<option value="${c.id}">${escapeHtml(c.label)}</option>`
         ).join('');
-      if (current && cats.some(c => c.id === current)) select.value = current;
+      if (current && CATEGORIES.some(c => c.id === current)) select.value = current;
     }
 
     function totalBudget(date = currentDate) {
@@ -294,7 +305,7 @@
         <input type="date" id="editDate" value="${expense.date}" style="margin-bottom:20px;">
         <div class="detail-edit-label" style="margin-bottom:6px;">Catégorie</div>
         <select id="editCategory" style="margin-bottom:20px;">
-          ${(state.categories || []).map(c => `<option value="${c.id}"${c.id === migrateCategoryId(expense.category) ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+          ${CATEGORIES.map(c => `<option value="${c.id}"${c.id === migrateCategoryId(expense.category) ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
         </select>
         <div class="detail-edit-label" style="margin-bottom:6px;">Description</div>
         <textarea id="editDescription" style="margin-bottom:20px;">${escapeHtml(expense.description || '')}</textarea>
@@ -396,7 +407,7 @@
       const base = budget > 0 ? budget : totalSpentAmt;
       const remaining = base - totalSpentAmt;
 
-      const slices = (state.categories || [])
+      const slices = CATEGORIES
         .filter(c => (spent[c.id] || 0) > 0)
         .map(c => ({ ...c, value: spent[c.id], pct: spent[c.id] / base }));
 
@@ -598,17 +609,11 @@
     }
 
     function renderExpensePage() {
-      const cats = state.categories || [];
       const spent = spentByCategory(currentDate);
       const listEl = document.getElementById('expenseCatList');
       if (!listEl) return;
 
-      if (cats.length === 0) {
-        listEl.innerHTML = `<div class="expense-cats-empty">Créez des catégories dans l'onglet <strong>Budget</strong> pour commencer le suivi.</div>`;
-        return;
-      }
-
-      listEl.innerHTML = cats.map(c => `
+      listEl.innerHTML = CATEGORIES.map(c => `
         <div class="expense-cat-row" data-cat="${c.id}">
           <div class="expense-cat-header">
             <div class="cat-row-left">
@@ -621,7 +626,7 @@
         </div>
       `).join('');
 
-      cats.forEach(c => {
+      CATEGORIES.forEach(c => {
         const itemsEl = listEl.querySelector(`[data-items="${c.id}"]`);
         if (itemsEl) itemsEl.innerHTML = renderExpenseItems(c.id);
       });
@@ -713,7 +718,6 @@
             <div class="budget-cat-entry-header">
               <div class="cat-row-left">
                 <span class="cat-indicator"></span>
-                <span class="cat-dot" style="background:${c.color}"></span>
                 <span class="cat-name">${escapeHtml(c.label)}</span>
               </div>
               <div class="budget-cat-entry-right">
@@ -863,7 +867,7 @@
         const exps = state.expenses.filter(e => e.date.startsWith(key));
         const s = exps.reduce((sum, e) => sum + e.amount, 0);
         const catMap = {};
-        (state.categories || []).forEach(c => { catMap[c.id] = 0; });
+        CATEGORIES.forEach(c => { catMap[c.id] = 0; });
         exps.forEach(e => {
           const id = migrateCategoryId(e.category);
           catMap[id] = (catMap[id] || 0) + e.amount;
@@ -926,7 +930,7 @@
         if (d.spent > 0) {
           if (isSelected) {
             // Pre-compute segment positions
-            const segs = (state.categories || []).filter(c => d.categories[c.id] > 0).map(c => {
+            const segs = CATEGORIES.filter(c => d.categories[c.id] > 0).map(c => {
               const ch = (d.categories[c.id] / maxVal) * chartH;
               const pct = Math.round((d.categories[c.id] / d.spent) * 100);
               return { ...c, value: d.categories[c.id], pct, ch };
