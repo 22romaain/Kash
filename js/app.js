@@ -1,13 +1,15 @@
 
-    const CATEGORIES = [
-      { id: 'alimentation-necessaires', label: 'Alimentation et nécessaires', color: '#6b1a2e' },
-      { id: 'logement', label: 'Logement', color: '#8c2d42' },
-      { id: 'transport', label: 'Transport', color: '#a84558' },
-      { id: 'loisirs', label: 'Loisirs', color: '#b86878' },
-      { id: 'abonnements', label: 'Abonnements', color: '#c08d98' },
-      { id: 'remboursement', label: 'Remboursement', color: '#bfaab0' },
-      { id: 'autres', label: 'Autres', color: '#9ca3af' },
+    const COLOR_PALETTE = [
+      '#6b1a2e','#8c2d42','#a84558','#b86878','#c08d98','#bfaab0',
+      '#9ca3af','#64748b','#374151','#0ea5e9','#10b981','#f59e0b',
+      '#8b5cf6','#ef4444','#1a1d26',
     ];
+
+    function nextCategoryColor() {
+      const used = new Set((state.categories || []).map(c => c.color));
+      return COLOR_PALETTE.find(c => !used.has(c))
+        || COLOR_PALETTE[(state.categories || []).length % COLOR_PALETTE.length];
+    }
 
     const CAT_MIGRATION = {
       necessaire: 'alimentation-necessaires',
@@ -71,7 +73,7 @@
           return data;
         }
       } catch {}
-      return { expenses: [], budgets: {}, monthBudgets: {} };
+      return { expenses: [], budgets: {}, monthBudgets: {}, categories: [] };
     }
 
     function saveState() {
@@ -108,7 +110,7 @@
 
     function getCat(id) {
       const migrated = migrateCategoryId(id);
-      const found = CATEGORIES.find(c => c.id === migrated);
+      const found = (state.categories || []).find(c => c.id === migrated);
       if (found) return found;
       return {
         id: migrated,
@@ -129,7 +131,7 @@
 
     function spentByCategory(date) {
       const map = {};
-      CATEGORIES.forEach(c => map[c.id] = 0);
+      (state.categories || []).forEach(c => map[c.id] = 0);
       getExpensesFor(date).forEach(e => {
         const id = migrateCategoryId(e.category);
         map[id] = (map[id] || 0) + e.amount;
@@ -140,13 +142,14 @@
     function renderCategorySelect() {
       const select = document.getElementById('category');
       if (!select) return;
+      const cats = state.categories || [];
       const current = select.value;
       select.innerHTML =
         `<option value="" disabled${!current ? ' selected' : ''}>Sélectionner une catégorie</option>` +
-        CATEGORIES.map(c =>
+        cats.map(c =>
           `<option value="${c.id}">${escapeHtml(c.label)}</option>`
         ).join('');
-      if (current && CATEGORIES.some(c => c.id === current)) select.value = current;
+      if (current && cats.some(c => c.id === current)) select.value = current;
     }
 
     function totalBudget(date = currentDate) {
@@ -291,7 +294,7 @@
         <input type="date" id="editDate" value="${expense.date}" style="margin-bottom:20px;">
         <div class="detail-edit-label" style="margin-bottom:6px;">Catégorie</div>
         <select id="editCategory" style="margin-bottom:20px;">
-          ${CATEGORIES.map(c => `<option value="${c.id}"${c.id === migrateCategoryId(expense.category) ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+          ${(state.categories || []).map(c => `<option value="${c.id}"${c.id === migrateCategoryId(expense.category) ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
         </select>
         <div class="detail-edit-label" style="margin-bottom:6px;">Description</div>
         <textarea id="editDescription" style="margin-bottom:20px;">${escapeHtml(expense.description || '')}</textarea>
@@ -393,7 +396,7 @@
       const base = budget > 0 ? budget : totalSpentAmt;
       const remaining = base - totalSpentAmt;
 
-      const slices = CATEGORIES
+      const slices = (state.categories || [])
         .filter(c => (spent[c.id] || 0) > 0)
         .map(c => ({ ...c, value: spent[c.id], pct: spent[c.id] / base }));
 
@@ -595,12 +598,31 @@
     }
 
     function renderExpensePage() {
+      const cats = state.categories || [];
       const spent = spentByCategory(currentDate);
+      const listEl = document.getElementById('expenseCatList');
+      if (!listEl) return;
 
-      CATEGORIES.forEach(c => {
-        const amtEl = document.querySelector(`[data-amt="${c.id}"]`);
-        const itemsEl = document.querySelector(`[data-items="${c.id}"]`);
-        if (amtEl) amtEl.textContent = formatCurrency(spent[c.id] || 0);
+      if (cats.length === 0) {
+        listEl.innerHTML = `<div class="expense-cats-empty">Créez des catégories dans l'onglet <strong>Budget</strong> pour commencer le suivi.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = cats.map(c => `
+        <div class="expense-cat-row" data-cat="${c.id}">
+          <div class="expense-cat-header">
+            <div class="cat-row-left">
+              <span class="cat-indicator"></span>
+              <span class="cat-name">${escapeHtml(c.label)}</span>
+            </div>
+            <span class="cat-amount" data-amt="${c.id}">${formatCurrency(spent[c.id] || 0)}</span>
+          </div>
+          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="${c.id}"></div></div></div>
+        </div>
+      `).join('');
+
+      cats.forEach(c => {
+        const itemsEl = listEl.querySelector(`[data-items="${c.id}"]`);
         if (itemsEl) itemsEl.innerHTML = renderExpenseItems(c.id);
       });
 
@@ -644,9 +666,37 @@
       const catsEl = document.getElementById('budgetCats');
       if (!catsEl) return;
 
+      const cats = state.categories || [];
       const spent = spentByCategory(currentDate);
       const budget = getBudgetFor(currentDate);
-      const rows = CATEGORIES.map(c => {
+
+      const addFormHtml = `
+        <div class="budget-add-cat" id="budgetAddCat">
+          <button class="budget-add-cat-btn" id="budgetAddCatBtn" type="button">
+            <span class="budget-add-cat-btn-icon">+</span>
+            Nouvelle catégorie
+          </button>
+          <div class="budget-add-cat-form" id="budgetAddCatForm">
+            <div class="budget-add-cat-inner">
+              <input type="text" id="newCatName" class="budget-add-cat-input"
+                placeholder="Nom de la catégorie" maxlength="40" autocomplete="off">
+              <button type="button" id="newCatSave" class="budget-cat-save-btn visible">Créer</button>
+            </div>
+          </div>
+        </div>`;
+
+      if (cats.length === 0) {
+        catsEl.innerHTML = `
+          <div class="budget-cats">
+            <div class="page-tag">Par catégorie</div>
+            ${addFormHtml}
+            <p class="budget-cats-empty">Aucune catégorie. Créez-en une pour planifier votre budget.</p>
+          </div>`;
+        bindBudgetCatAdd(catsEl);
+        return;
+      }
+
+      const rows = cats.map(c => {
         const s = spent[c.id] || 0;
         const b = budget[c.id] || 0;
         const hasB = b > 0;
@@ -663,6 +713,7 @@
             <div class="budget-cat-entry-header">
               <div class="cat-row-left">
                 <span class="cat-indicator"></span>
+                <span class="cat-dot" style="background:${c.color}"></span>
                 <span class="cat-name">${escapeHtml(c.label)}</span>
               </div>
               <div class="budget-cat-entry-right">
@@ -677,12 +728,19 @@
             </div>` : ''}
             <div class="budget-cat-edit-detail">
               <div class="budget-cat-edit-wrap">
+                <div class="budget-cat-name-row">
+                  <input class="budget-cat-name-input" type="text"
+                    value="${escapeHtml(c.label)}" maxlength="40" placeholder="Nom">
+                </div>
                 <div class="budget-cat-input-row">
                   <input class="budget-cat-amount-input" type="number" step="0.01" min="0"
                     value="${b || ''}" placeholder="0">
                   <span class="budget-cat-currency">€</span>
                 </div>
-                <button class="budget-cat-save-btn" type="button">Enregistrer</button>
+                <div class="budget-cat-actions">
+                  <button class="budget-cat-save-btn" type="button">Enregistrer</button>
+                  <button class="budget-cat-delete-btn" type="button">Supprimer</button>
+                </div>
               </div>
             </div>
           </div>`;
@@ -691,25 +749,31 @@
       catsEl.innerHTML = `
         <div class="budget-cats">
           <div class="page-tag">Par catégorie</div>
+          ${addFormHtml}
           <div class="budget-cat-list">${rows}</div>
         </div>`;
+
+      bindBudgetCatAdd(catsEl);
 
       catsEl.querySelectorAll('.budget-cat-entry').forEach(entry => {
         const catId = entry.dataset.cat;
         const editBtn = entry.querySelector('.budget-cat-edit-btn');
         const detail = entry.querySelector('.budget-cat-edit-detail');
         const saveBtn = entry.querySelector('.budget-cat-save-btn');
-        const input = entry.querySelector('.budget-cat-amount-input');
+        const amountInput = entry.querySelector('.budget-cat-amount-input');
+        const nameInput = entry.querySelector('.budget-cat-name-input');
+        const deleteBtn = entry.querySelector('.budget-cat-delete-btn');
 
-        // Show Enregistrer when value typed (0 inclus) ou vidé
-        input.addEventListener('input', () => {
-          saveBtn.classList.toggle('visible', input.value.trim() !== '');
+        amountInput.addEventListener('input', () => {
+          saveBtn.classList.toggle('visible', true);
         });
 
-        // Modifier click → toggle expand
+        nameInput.addEventListener('input', () => {
+          saveBtn.classList.toggle('visible', true);
+        });
+
         editBtn.addEventListener('click', () => {
           const isOpen = entry.classList.contains('editing');
-          // Close any other open entry
           catsEl.querySelectorAll('.budget-cat-entry.editing').forEach(e => {
             if (e !== entry) {
               e.classList.remove('editing');
@@ -722,13 +786,17 @@
           } else {
             entry.classList.add('editing');
             detail.style.height = detail.scrollHeight + 'px';
-            setTimeout(() => input.focus(), 200);
+            setTimeout(() => nameInput.focus(), 200);
           }
         });
 
-        // Enregistrer click → save & close
         saveBtn.addEventListener('click', () => {
-          const raw = input.value.trim();
+          const newName = nameInput.value.trim();
+          if (newName) {
+            const idx = state.categories.findIndex(c => c.id === catId);
+            if (idx !== -1) state.categories[idx].label = newName;
+          }
+          const raw = amountInput.value.trim();
           const val = parseFloat(raw);
           const key = monthKey(currentDate);
           if (!state.budgets[key]) state.budgets[key] = {};
@@ -736,8 +804,52 @@
           else delete state.budgets[key][catId];
           saveState();
           render();
-          showToast('Budget mis à jour');
+          showToast('Mis à jour');
         });
+
+        deleteBtn.addEventListener('click', () => {
+          state.categories = state.categories.filter(c => c.id !== catId);
+          Object.keys(state.budgets).forEach(k => { delete state.budgets[k][catId]; });
+          saveState();
+          render();
+          showToast('Catégorie supprimée');
+        });
+      });
+    }
+
+    function bindBudgetCatAdd() {
+      const btn      = document.getElementById('budgetAddCatBtn');
+      const form     = document.getElementById('budgetAddCatForm');
+      const addCat   = document.getElementById('budgetAddCat');
+      const nameInput = document.getElementById('newCatName');
+      const saveBtn  = document.getElementById('newCatSave');
+      if (!btn || !form) return;
+
+      btn.addEventListener('click', () => {
+        const isOpen = addCat.classList.contains('open');
+        if (isOpen) {
+          addCat.classList.remove('open');
+          form.style.height = '0';
+        } else {
+          addCat.classList.add('open');
+          form.style.height = form.scrollHeight + 'px';
+          setTimeout(() => nameInput && nameInput.focus(), 180);
+        }
+      });
+
+      const doCreate = () => {
+        const name = (nameInput.value || '').trim();
+        if (!name) return;
+        if (!state.categories) state.categories = [];
+        state.categories.push({ id: generateId(), label: name, color: nextCategoryColor() });
+        saveState();
+        render();
+        showToast('Catégorie créée');
+      };
+
+      saveBtn.addEventListener('click', doCreate);
+      nameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); doCreate(); }
       });
     }
 
@@ -751,7 +863,7 @@
         const exps = state.expenses.filter(e => e.date.startsWith(key));
         const s = exps.reduce((sum, e) => sum + e.amount, 0);
         const catMap = {};
-        CATEGORIES.forEach(c => { catMap[c.id] = 0; });
+        (state.categories || []).forEach(c => { catMap[c.id] = 0; });
         exps.forEach(e => {
           const id = migrateCategoryId(e.category);
           catMap[id] = (catMap[id] || 0) + e.amount;
@@ -814,7 +926,7 @@
         if (d.spent > 0) {
           if (isSelected) {
             // Pre-compute segment positions
-            const segs = CATEGORIES.filter(c => d.categories[c.id] > 0).map(c => {
+            const segs = (state.categories || []).filter(c => d.categories[c.id] > 0).map(c => {
               const ch = (d.categories[c.id] / maxVal) * chartH;
               const pct = Math.round((d.categories[c.id] / d.spent) * 100);
               return { ...c, value: d.categories[c.id], pct, ch };

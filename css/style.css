@@ -1380,6 +1380,129 @@
     .budget-cat-save-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
     .budget-cat-save-btn.visible { opacity: 1; pointer-events: auto; }
 
+    /* Budget – add category */
+    .budget-add-cat { border-bottom: 1px solid var(--border); }
+
+    .budget-add-cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 20px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-futuristic);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color .25s ease;
+    }
+
+    .budget-add-cat-btn:hover { color: var(--text); }
+
+    .budget-add-cat-btn-icon {
+      font-size: 18px;
+      font-weight: 200;
+      line-height: 1;
+      transition: transform .4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .budget-add-cat.open .budget-add-cat-btn-icon { transform: rotate(45deg); }
+
+    .budget-add-cat-form {
+      overflow: hidden;
+      height: 0;
+      transition: height .55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .budget-add-cat-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 0 24px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity .35s ease, transform .55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .budget-add-cat.open .budget-add-cat-inner {
+      opacity: 1;
+      transform: translateY(0);
+      transition-delay: .1s;
+    }
+
+    .budget-add-cat-input { flex: 1; }
+
+    /* Budget – category edit: rename + delete */
+    .budget-cat-name-row {
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      padding-bottom: 4px;
+      transition: border-color .25s ease;
+    }
+
+    .budget-cat-name-row:focus-within { border-bottom-color: var(--text-muted); }
+
+    .budget-cat-name-input {
+      width: 100%;
+      font-family: var(--font-futuristic);
+      font-size: 1rem;
+      font-weight: 300;
+      letter-spacing: 0.14em;
+      border: none;
+      background: transparent;
+      padding: 4px 0;
+      color: var(--text);
+    }
+
+    .budget-cat-name-input:focus { outline: none; }
+
+    .budget-cat-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .budget-cat-delete-btn {
+      font-family: var(--font-futuristic);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color .25s ease, border-color .25s ease;
+    }
+
+    .budget-cat-delete-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+    /* Budget – empty state */
+    .budget-cats-empty {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 28px 0 4px;
+      letter-spacing: 0.01em;
+    }
+
+    /* Expense – empty state (no categories yet) */
+    .expense-cats-empty {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 32px 0;
+      text-align: center;
+      letter-spacing: 0.01em;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
     /* ===== INSIGHTS TAB ===== */
 
     .insights-intro {

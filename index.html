@@ -80,78 +80,7 @@
         <input type="text" id="expenseSearch" placeholder="Filtrer par catégorie ou description…" autocomplete="off">
       </div>
       <p class="cat-hint expenses-hint">Survolez une catégorie pour afficher le détail</p>
-      <div class="expense-cat-list" id="expenseCatList">
-        <div class="expense-cat-row" data-cat="alimentation-necessaires">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Alimentation et nécessaires</span>
-            </div>
-            <span class="cat-amount" data-amt="alimentation-necessaires">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="alimentation-necessaires"></div></div></div>
-        </div>
-        <div class="expense-cat-row" data-cat="logement">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Logement</span>
-            </div>
-            <span class="cat-amount" data-amt="logement">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="logement"></div></div></div>
-        </div>
-        <div class="expense-cat-row" data-cat="transport">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Transport</span>
-            </div>
-            <span class="cat-amount" data-amt="transport">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="transport"></div></div></div>
-        </div>
-        <div class="expense-cat-row" data-cat="loisirs">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Loisirs</span>
-            </div>
-            <span class="cat-amount" data-amt="loisirs">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="loisirs"></div></div></div>
-        </div>
-        <div class="expense-cat-row" data-cat="abonnements">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Abonnements</span>
-            </div>
-            <span class="cat-amount" data-amt="abonnements">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="abonnements"></div></div></div>
-        </div>
-        <div class="expense-cat-row" data-cat="remboursement">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Remboursement</span>
-            </div>
-            <span class="cat-amount" data-amt="remboursement">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="remboursement"></div></div></div>
-        </div>
-        <div class="expense-cat-row" data-cat="autres">
-          <div class="expense-cat-header">
-            <div class="cat-row-left">
-              <span class="cat-indicator"></span>
-              <span class="cat-name">Autres</span>
-            </div>
-            <span class="cat-amount" data-amt="autres">0,00&nbsp;€</span>
-          </div>
-          <div class="expense-cat-detail"><div class="expense-cat-detail-wrap"><div class="expense-cat-scroll" data-items="autres"></div></div></div>
-        </div>
-      </div>
+      <div class="expense-cat-list" id="expenseCatList"></div>
     </div>
 
     <div class="add-expense">
@@ -171,13 +100,6 @@
           <label for="category">Catégorie</label>
           <select id="category" required>
             <option value="" disabled selected>Sélectionner une catégorie</option>
-            <option value="alimentation-necessaires">Alimentation et nécessaires</option>
-            <option value="logement">Logement</option>
-            <option value="transport">Transport</option>
-            <option value="loisirs">Loisirs</option>
-            <option value="abonnements">Abonnements</option>
-            <option value="remboursement">Remboursement</option>
-            <option value="autres">Autres</option>
           </select>
         </div>
         <div class="form-group">
