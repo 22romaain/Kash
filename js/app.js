@@ -194,6 +194,24 @@
       return d.innerHTML;
     }
 
+    function sanitizeText(str, maxLen = 200) {
+      return String(str || '').trim().slice(0, maxLen);
+    }
+
+    function sanitizeAmount(val) {
+      const n = parseFloat(val);
+      if (!isFinite(n) || n < 0) return null;
+      return Math.round(n * 100) / 100;
+    }
+
+    function sanitizeDate(str) {
+      return /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(str) ? str : null;
+    }
+
+    function sanitizeCategory(id) {
+      return CATEGORIES.some(c => c.id === id) ? id : null;
+    }
+
     function progressClass(spent, budget) {
       if (!budget) return 'warn';
       const ratio = spent / budget;
@@ -249,10 +267,10 @@
 
       document.getElementById('detailSaveBudget').onclick = () => {
         const raw = document.getElementById('detailBudgetInput').value.trim();
-        const val = parseFloat(raw);
+        const val = raw !== '' ? sanitizeAmount(raw) : null;
         const key = monthKey(currentDate);
         if (!state.budgets[key]) state.budgets[key] = {};
-        if (raw !== '' && !isNaN(val)) state.budgets[key][catId] = val;
+        if (val !== null) state.budgets[key][catId] = val;
         else delete state.budgets[key][catId];
         saveState();
         render();
@@ -286,11 +304,11 @@
         <div class="detail-edit-label" style="margin-bottom:6px;">Montant (€)</div>
         <div class="detail-input-row" style="margin-bottom:20px;">
           <input class="detail-input" type="number" id="editAmount" step="0.01" min="0.01"
-            value="${expense.amount}" placeholder="0">
+            value="${escapeHtml(String(expense.amount))}" placeholder="0">
           <span class="detail-input-currency">€</span>
         </div>
         <div class="detail-edit-label" style="margin-bottom:6px;">Date</div>
-        <input type="date" id="editDate" value="${expense.date}" style="margin-bottom:20px;">
+        <input type="date" id="editDate" value="${escapeHtml(expense.date)}" style="margin-bottom:20px;">
         <div class="detail-edit-label" style="margin-bottom:6px;">Catégorie</div>
         <select id="editCategory" style="margin-bottom:20px;">
           ${CATEGORIES.map(c => `<option value="${c.id}"${c.id === migrateCategoryId(expense.category) ? ' selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
@@ -303,10 +321,10 @@
       document.getElementById('detailBackdrop').classList.add('visible');
 
       document.getElementById('editSaveBtn').onclick = () => {
-        const amount = parseFloat(document.getElementById('editAmount').value);
-        const date = document.getElementById('editDate').value;
-        const category = document.getElementById('editCategory').value;
-        const description = document.getElementById('editDescription').value.trim();
+        const amount = sanitizeAmount(document.getElementById('editAmount').value);
+        const date = sanitizeDate(document.getElementById('editDate').value);
+        const category = sanitizeCategory(document.getElementById('editCategory').value);
+        const description = sanitizeText(document.getElementById('editDescription').value, 200);
         if (!amount || !date || !category) return;
         const idx = state.expenses.findIndex(e => e.id === expenseId);
         if (idx !== -1) {
@@ -740,10 +758,10 @@
 
         saveBtn.addEventListener('click', () => {
           const raw = input.value.trim();
-          const val = parseFloat(raw);
+          const val = raw !== '' ? sanitizeAmount(raw) : null;
           const key = monthKey(currentDate);
           if (!state.budgets[key]) state.budgets[key] = {};
-          if (raw !== '' && !isNaN(val)) state.budgets[key][catId] = val;
+          if (val !== null) state.budgets[key][catId] = val;
           else delete state.budgets[key][catId];
           saveState();
           render();
@@ -1237,9 +1255,9 @@
 
     document.getElementById('saveBudgetBtn').addEventListener('click', () => {
       const raw = document.getElementById('budgetAmount').value.trim();
-      const val = parseFloat(raw);
+      const val = raw !== '' ? sanitizeAmount(raw) : null;
       if (!state.monthBudgets) state.monthBudgets = {};
-      if (raw !== '' && !isNaN(val)) state.monthBudgets[monthKey(currentDate)] = val;
+      if (val !== null) state.monthBudgets[monthKey(currentDate)] = val;
       else delete state.monthBudgets[monthKey(currentDate)];
       saveState();
       render();
@@ -1259,11 +1277,11 @@
 
     document.getElementById('expenseForm').addEventListener('submit', e => {
       e.preventDefault();
-      const amount = parseFloat(document.getElementById('amount').value);
-      const date = document.getElementById('date').value;
-      const category = document.getElementById('category').value;
-      const description = document.getElementById('description').value.trim();
-      if (!amount || !category) {
+      const amount = sanitizeAmount(document.getElementById('amount').value);
+      const date = sanitizeDate(document.getElementById('date').value);
+      const category = sanitizeCategory(document.getElementById('category').value);
+      const description = sanitizeText(document.getElementById('description').value, 200);
+      if (!amount || !date || !category) {
         if (!category) showToast('Sélectionnez une catégorie');
         return;
       }
