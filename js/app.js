@@ -198,6 +198,15 @@
       return String(str || '').trim().slice(0, maxLen);
     }
 
+    function sanitizeDescForAPI(str) {
+      return String(str || '')
+        .replace(/[\x00-\x1f\x7f\u200b-\u200d\ufeff]/g, '') // caractères de contrôle
+        .replace(/<[^>]*>/g, '')                              // balises HTML/script
+        .replace(/[`'"\\]/g, '')                              // guillemets et backticks
+        .trim()
+        .slice(0, 200);
+    }
+
     function sanitizeAmount(val) {
       const n = parseFloat(val);
       if (!isFinite(n) || n < 0) return null;
@@ -1149,11 +1158,12 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             expenses: expenses.map(e => ({
-              description: e.description || '',
+              description: sanitizeDescForAPI(e.description),
               amount: e.amount,
-              category: getCat(e.category).label,
+              category: e.category,
               date: e.date,
             })),
+            budget: state.monthBudgets?.[key] ?? null,
           }),
         });
         if (!res.ok) throw new Error('Erreur serveur ' + res.status);
@@ -1318,58 +1328,72 @@
 
     // --- Insights ---
 
+    // Convertit une ligne en HTML : échappe le HTML puis rend le **gras**
+    function renderInline(raw) {
+      return raw
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // Convertit le contenu d'une section (lignes[]) en HTML structuré
+    function renderSectionContent(lines) {
+      let html = '';
+      let inList = false;
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) {
+          if (inList) { html += '</ul>'; inList = false; }
+          continue;
+        }
+        if (/^[-•*]\s+/.test(line)) {
+          if (!inList) { html += '<ul class="insights-list">'; inList = true; }
+          html += `<li>${renderInline(line.replace(/^[-•*]\s+/, ''))}</li>`;
+        } else {
+          if (inList) { html += '</ul>'; inList = false; }
+          html += `<p class="insights-para">${renderInline(line)}</p>`;
+        }
+      }
+      if (inList) html += '</ul>';
+      return html;
+    }
+
+    // Découpe le texte Mistral en sections numérotées (1. Titre …)
+    function parseAnalysisSections(text) {
+      const lines = text.split('\n');
+      const sections = [];
+      let current = null;
+      for (const raw of lines) {
+        const m = raw.trim().match(/^(?:\*\*)?(\d+)\.\s+(.+?)(?:\*\*)?$/);
+        if (m) {
+          if (current) sections.push(current);
+          current = { title: m[2].replace(/\*\*/g, '').trim(), lines: [] };
+        } else {
+          if (!current) current = { title: null, lines: [] };
+          current.lines.push(raw);
+        }
+      }
+      if (current) sections.push(current);
+      return sections.filter(s => s.title || s.lines.some(l => l.trim()));
+    }
+
     function renderInsightsResult(data) {
       const container = document.getElementById('insightsResult');
       if (!container) return;
 
-      // Cas : réponse vide
-      if (!data) {
+      const text = !data ? '' : (typeof data === 'object' ? (data.analysis || '') : String(data));
+
+      if (!text.trim()) {
         container.innerHTML = `<div class="insights-error">La réponse de l'API est vide.</div>`;
         return;
       }
 
-      // Si l'API renvoie un objet structuré avec des champs connus
-      if (typeof data === 'object' && !Array.isArray(data)) {
-        const knownSections = [
-          { key: 'summary',         label: 'Résumé' },
-          { key: 'highlights',      label: 'Points clés' },
-          { key: 'recommendations', label: 'Recommandations' },
-          { key: 'analysis',        label: 'Analyse' },
-          { key: 'insights',        label: 'Insights' },
-          { key: 'message',         label: 'Message' },
-          { key: 'text',            label: 'Analyse' },
-        ];
-        const blocks = knownSections
-          .filter(s => data[s.key] != null && String(data[s.key]).trim() !== '')
-          .map((s, i) => {
-            const content = Array.isArray(data[s.key])
-              ? data[s.key].map(item => `• ${typeof item === 'object' ? JSON.stringify(item) : item}`).join('\n')
-              : String(data[s.key]);
-            return `<div class="insights-block" style="animation-delay:${i * 0.08}s">
-              <div class="insights-block-label">${s.label}</div>
-              <div class="insights-block-text">${escapeHtml(content)}</div>
-            </div>`;
-          });
-
-        if (blocks.length > 0) {
-          container.innerHTML = blocks.join('');
-          return;
-        }
-
-        // Objet non reconnu → dump propre
-        container.innerHTML = `<div class="insights-block">
-          <div class="insights-block-label">Réponse</div>
-          <div class="insights-raw">${escapeHtml(JSON.stringify(data, null, 2))}</div>
-        </div>`;
-        return;
-      }
-
-      // Chaîne ou autre → affichage direct
-      const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-      container.innerHTML = `<div class="insights-block">
-        <div class="insights-block-label">Analyse</div>
-        <div class="insights-block-text">${escapeHtml(text)}</div>
-      </div>`;
+      const sections = parseAnalysisSections(text);
+      container.innerHTML = sections.map((s, i) => `
+        <div class="insights-block" style="animation-delay:${i * 0.07}s">
+          ${s.title ? `<div class="insights-block-label">${escapeHtml(s.title)}</div>` : ''}
+          <div class="insights-block-body">${renderSectionContent(s.lines)}</div>
+        </div>
+      `).join('');
     }
 
     async function runInsightsAnalysis() {
@@ -1384,8 +1408,8 @@
       const expenses = state.expenses.filter(e => e.date.startsWith(key)).map(e => ({
         amount:      e.amount,
         date:        e.date,
-        category:    getCat(e.category).label,
-        description: e.description || '',
+        category:    e.category,
+        description: sanitizeDescForAPI(e.description),
       }));
 
       if (expenses.length === 0) {
